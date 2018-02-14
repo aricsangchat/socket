@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #messages { margin-bottom: 40px; max-height: 90vh;
+    overflow: scroll; }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  </head>
+  <body>
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='col-12 col-md-4'>
+          <h2>Machine Learning Neural Network</h2>
+          <p>
+            This is a machine learning crypto currency trader. It turns important information that includes tracking the ema and cost into binarary numbers ranging from -1 to 1 indicating whether the neurons are on or off. It stores all of this information in an array which is used to train the network. To train the network use the following commands...
+            b - buy
+            s - sell
+            start - starts the start program
+            stop - stops the program
+            save - saves trained data to JSON
+            p - place order
+            a - ask order
+          </p>
+          <ul id="messages"></ul>
+        </div>
+        <div class='col-12 col-md-8'>
+          <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="myHistoDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+        </div>
+      </div>
+    </div>
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='col-12'>
+          <form action="">
+            <input id="m" autocomplete="off" /><button>Send</button>
+          </form>        </div>
+      </div>
+    </div>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script>
+      let data = [];
+      $(function () {
+        var socket = io();
+        $('form').submit(function(){
+          socket.emit('botLog', $('#m').val());
+          $('#m').val('');
+          return false;
+        });
+        socket.on('botLog', function(msg, neuralTrainingData){
+          $('#messages').append($('<li>').text(msg));
+          if ($("#messages li").length >= 10) {
+            $("#messages li:first").remove();
+          }
+          //console.log(neuralTrainingData);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+        socket.on('graphData', function(graphData){
+          const layout = {
+            title:'Real Time Crypto Data',
+            aspectmode: 'cube'
+          };
+
+          Plotly.newPlot('myDiv', graphData, layout);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+        socket.on('histoData', function(histoData){
+          const histoLayout = {barmode: "stack"};
+
+          Plotly.newPlot('myHistoDiv', histoData, histoLayout);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+      });
+
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>
