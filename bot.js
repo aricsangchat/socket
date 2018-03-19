@@ -89,6 +89,7 @@ let trace6 = {
   mode: 'lines',
   name: 'Lows'
 }
+let openBuyOrders = [];
 
 exports.startProgram = (io) => {
   let sells = [];
@@ -138,7 +139,7 @@ exports.startProgram = (io) => {
       trace4.x.push(Date.now());
       trace4.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
     }
-    if (trace1.x.length > 1000) {
+    if (trace1.x.length > 500) {
       trace1.x.shift();
       trace1.y.shift();
       trace2.x.shift();
@@ -171,10 +172,12 @@ exports.startProgram = (io) => {
     let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
     console.log(symbol+' trade update. price: '+price+', quantity: '+quantity+', maker: '+maker);
     
-    if (trace2.y[trace2.y.length - 1] > trace3.y[trace3.y.length - 1] && trace1.y[trace1.y.length - 1] > trace2.y[trace2.y.length - 1]) {
+    if (trace2.y[trace2.y.length - 1] > trace3.y[trace3.y.length - 1] && (trace1.y[trace1.y.length - 1] > trace2.y[trace2.y.length - 1] && trace2.y[trace2.y.length - 1] >= trace2.y[trace2.y.length - 2])) {
       settings[0].trend = 'up';
     } else {
-      cancelBuy(settings[0].buyOrderNum);
+      if (openBuyOrders.length > 0) {
+        cancelBuys();
+      }
       settings[0].trend = 'down';
     }
 
@@ -192,9 +195,9 @@ exports.startProgram = (io) => {
 
     if (buys.length >= settings[0].avlToStart) {
       spread = getSpread(buys[buys.length - 1], sells[sells.length - 1]);
-      let averageBuyPrice = _.meanBy(buys, 'price');
-      let averageSellPrice = _.meanBy(sells, 'price');
-      let minBuyPrice = _.minBy(buys, 'price');
+      //let averageBuyPrice = _.meanBy(buys, 'price');
+      //let averageSellPrice = _.meanBy(sells, 'price');
+      //let minBuyPrice = _.minBy(buys, 'price');
       // let averageSellPrice = _.meanBy(sells, 'price');
       let buyPrice = parseFloat(buys[buys.length - 1].price);
       //settings[0].buyPrice = parseFloat(buys[buys.length - 1].price);
@@ -208,7 +211,7 @@ exports.startProgram = (io) => {
       console.log('SPR:', currentSellPrice.toFixed(settings[0].decimalPlace));
       // console.log('ABP:', averageBuyPrice.toFixed(settings[0].decimalPlace));
       // console.log('ASP:', averageSellPrice.toFixed(settings[0].decimalPlace));
-      console.log('BST:', settings[0].bst.toFixed(settings[0].decimalPlace));
+      // console.log('BST:', settings[0].bst.toFixed(settings[0].decimalPlace));
       // console.log('BON:', settings[0].buyOrderNum);
       console.log('SST:', settings[0].sst.toFixed(settings[0].decimalPlace));
       console.log('STE:', settings[0].state);
@@ -218,9 +221,14 @@ exports.startProgram = (io) => {
       // console.log('MBP:', minBuyPrice.price);
       if ( spread >= settings[0].minSpread && (settings[0].state === null && settings[0].trend === 'up')) {
         debounceBuy(buyPrice);
-        settings[0].state = 'Buying';
-      } else if (settings[0].bst > settings[0].bstLimit ) {
-        cancelBuy(settings[0].buyOrderNum);
+      } 
+
+      if (openBuyOrders.length > 0) {
+        checkBuyStatus(buyPrice, () => {
+          if ( spread >= settings[0].minSpread && (settings[0].state === null && settings[0].trend === 'up')) {
+            debounceBuy(buyPrice);
+          }
+        });
       }
     
       if (sells.length >= settings[0].avlMax) {
@@ -263,13 +271,17 @@ exports.startProgram = (io) => {
         settings[0].sellPrice = null;
         settings[0].sellOrderNum = null;
         settings[0].buyPrice = null;
-        settings[0].buyOrderNum = null;
+        //settings[0].buyOrderNum = null;
         return;
       } else if (side === 'BUY' && orderStatus === 'NEW') {
         placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
         settings[0].state = 'Buying';
         settings[0].buyPrice = price;
         settings[0].buyOrderNum = orderId;
+        openBuyOrders.push({
+          orderId: orderId,
+          price: parseFloat(price)
+        });
         return;
       } else if (side === 'SELL' && orderStatus === 'NEW') {
         settings[0].state = null;
@@ -277,20 +289,20 @@ exports.startProgram = (io) => {
         settings[0].sellOrderNum = orderId;
         return;
       } else if (side === 'BUY' && orderStatus === 'PARTIALLY_FILLED') {
-        settings[0].state = 'buyPartialFill';
+        // settings[0].state = 'buyPartialFill';
         return;
       } else if (side === 'SELL' && orderStatus === 'PARTIALLY_FILLED') {
-        settings[0].state = 'sellPartialFill';
+        // settings[0].state = 'sellPartialFill';
         return;
       } else if (side === 'SELL' && orderStatus === 'CANCELED') {
-        settings[0].state = 'RelistSell';
+        // settings[0].state = 'RelistSell';
         settings[0].sellPrice = null;
         settings[0].sellOrderNum = null;
         return;
       } else if (side === 'BUY' && orderStatus === 'CANCELED') {
         settings[0].state = null;
         settings[0].buyPrice = null;
-        settings[0].buyOrderNum = null;
+        // settings[0].buyOrderNum = null;
         return;
       } else {
         return;
@@ -421,6 +433,16 @@ function cancelBuy(orderNum) {
   });
 }
 
+function cancelBuys() {
+  console.log(openBuyOrders);
+  openBuyOrders.forEach(order => {
+    binance.cancel(settings[0].ticker, order.orderId, function(response, symbol) {
+      console.log('Canceled order #: ', + order.orderId);
+    });
+  })
+  openBuyOrders = [];
+}
+
 function cancelSell(orderNum) {
   binance.cancel(settings[0].ticker, orderNum, function(response, symbol) {
     console.log('Canceled order #: ', + orderNum);
@@ -452,4 +474,16 @@ function count(array_elements) {
         document.write(current + ' comes --> ' + cnt + ' times');
     }
 
+}
+
+function checkBuyStatus(buyPrice, cb) {
+  openBuyOrders.forEach(order => {
+    let bst = buyPrice - order.price;
+    console.log('BST:', bst.toFixed(settings[0].decimalPlace));
+    if (bst.toFixed(settings[0].decimalPlace) > settings[0].bstLimit && order.orderId != null) {
+      cancelBuy(order.orderId);
+      order.orderId = null;
+    }
+  });
+  cb();
 }
