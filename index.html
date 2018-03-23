@@ -37,7 +37,7 @@
         </div>
         <div class='col-12 col-md-8'>
           <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
-          <div id="myHistoDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="closeDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
         </div>
       </div>
     </div>
@@ -76,10 +76,13 @@
           Plotly.newPlot('myDiv', graphData, layout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
-        socket.on('histoData', function(histoData){
-          const histoLayout = {barmode: "stack"};
-
-          Plotly.newPlot('myHistoDiv', histoData, histoLayout);
+        socket.on('closeData', function(closeData){
+          const closeLayout = {
+            title:'Close Data',
+            aspectmode: 'cube'
+          };
+          console.log(closeData);
+          Plotly.newPlot('closeDiv', closeData, closeLayout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
       });
