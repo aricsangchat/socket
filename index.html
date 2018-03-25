@@ -36,8 +36,10 @@
           <ul id="messages"></ul>
         </div>
         <div class='col-12 col-md-8'>
-          <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
           <div id="closeDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="volumeGraph"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+
         </div>
       </div>
     </div>
@@ -81,8 +83,17 @@
             title:'Close Data',
             aspectmode: 'cube'
           };
-          console.log(closeData);
+          //console.log(closeData);
           Plotly.newPlot('closeDiv', closeData, closeLayout);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+        socket.on('volumeData', function(volumeData){
+          const volumeLayout = {
+            title:'Volume Data',
+            aspectmode: 'cube'
+          };
+          //console.log(closeData);
+          Plotly.newPlot('volumeGraph', volumeData, volumeLayout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
       });
