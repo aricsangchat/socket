@@ -53,7 +53,17 @@ let settings = [
     close: null,
     trend: [],
     ema25Trend: [],
-    reset: false
+    reset: false,
+    queue: [],
+    amountOfBuys: null,
+    amountOfSells: null,
+    percentageTrend: [],
+    orderTrend995: ['sold'],
+    orderTrend99: [],
+    orderTrend985: ['sold'],
+    orderTrend98: ['sold'],
+    orderTrend975: ['sold'],
+    orderTrend97: ['sold'],
   }
 ];
 
@@ -81,6 +91,18 @@ let closetrace4 = {
   y: [],
   mode: 'lines',
   name: 'EMA99'
+};
+let closetrace5 = {
+  x: [],
+  y: [],
+  mode: 'markers',
+  name: 'Buy'
+};
+let closetrace6 = {
+  x: [],
+  y: [],
+  mode: 'markers',
+  name: 'Sell'
 };
 let trace1 = {
   x: [],
@@ -140,7 +162,7 @@ let openBuyOrders = [];
 let openSellOrders = [];
 let timeOut;
 let boughtArray = [];
-let closeData = [ closetrace1, closetrace2, closetrace3, closetrace4 ];
+
 let webSocketData = [ trace1, trace2, trace3, trace4, trace5, trace6, trace7, trace8 ];
 let volumeData = [volumeTrace];
 let spread = null;
@@ -150,8 +172,14 @@ const debounceCancelBuy = _.debounce(cancelBuy, 700, {leading: true, trailing: f
 const debounceCancelSell = _.debounce(cancelSell, 700, {leading: true, trailing: false});
 let spreadSellprice;
 let globalTrendBuyPrice = null;
+let engage = false;
 
 exports.startProgram = (io) => {
+  getSocketChartData('BNBUSDT', '1m', 'BNBUSDTEMA', io);
+  engageTimeOut = setTimeout(function(){
+    engage = true
+  }, 300000);
+  //getSocketChartData('BTCUSDT', '4h', 'BTCUSDTEMA', io);
   let sells = [];
   let buys = [];
   let spdAvg = [];
@@ -165,200 +193,203 @@ exports.startProgram = (io) => {
   
   let startingAverageArray = [];
   let movingAverageArray = [];
+  
+
+    
 
   //Periods: 1m,3m,5m,15m,30m,1h,2h,4h,6h,8h,12h,1d,3d,1w,1M
-  binance.websockets.candlesticks([settings[0].ticker], '1m', (candlesticks) => {
-    let { e:eventType, E:eventTime, s:symbol, k:ticks } = candlesticks;
-    let { o:open, h:high, l:low, c:close, v:volume, n:trades, i:interval, x:isFinal, q:quoteVolume, V:buyVolume, Q:quoteBuyVolume } = ticks;
-    settings[0].close = close;
-    graph1mCandleStick(close, io);
-    graphVolume(volume, io);
-  });
+  // binance.websockets.candlesticks([settings[0].ticker], '1m', (candlesticks) => {
+  //   let { e:eventType, E:eventTime, s:symbol, k:ticks } = candlesticks;
+  //   let { o:open, h:high, l:low, c:close, v:volume, n:trades, i:interval, x:isFinal, q:quoteVolume, V:buyVolume, Q:quoteBuyVolume } = ticks;
+  //   settings[0].close = close;
+  //   graph1mCandleStick(close, io);
+  //   graphVolume(volume, io);
+  // });
 
-  binance.websockets.trades([settings[0].ticker], function(trades) {
-    declareGlobalTrend(closetrace2.y[closetrace2.y.length - 1], closetrace3.y[closetrace3.y.length - 1], closetrace4.y[closetrace4.y.length - 1], closetrace4.y[closetrace4.y.length - 2]);
-    let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
-    console.log(symbol+' trade update. price: '+price+', quantity: '+quantity+', maker: '+maker);
+  // binance.websockets.trades([settings[0].ticker], function(trades) {
+  //   declareGlobalTrend(closetrace2.y[closetrace2.y.length - 1], closetrace3.y[closetrace3.y.length - 1], closetrace4.y[closetrace4.y.length - 1], closetrace4.y[closetrace4.y.length - 2]);
+  //   let {e:eventType, E:eventTime, s:symbol, p:price, q:quantity, m:maker, a:tradeId} = trades;
+  //   console.log(symbol+' trade update. price: '+price+', quantity: '+quantity+', maker: '+maker);
 
-    if (maker) {
-      buys.push({
-        price: parseFloat(price),
-        quantity: parseFloat(quantity)
-      });
-    } else {
-      sells.push({
-        price: parseFloat(price),
-        quantity: parseFloat(quantity)
-      });
-    }
+  //   if (maker) {
+  //     buys.push({
+  //       price: parseFloat(price),
+  //       quantity: parseFloat(quantity)
+  //     });
+  //   } else {
+  //     sells.push({
+  //       price: parseFloat(price),
+  //       quantity: parseFloat(quantity)
+  //     });
+  //   }
 
-    //graphWebSocket(buys, sells, io, webSocketData);
+  //   //graphWebSocket(buys, sells, io, webSocketData);
 
     
-    // if (trace6.y[trace6.y.length - 1] > trace7.y[trace7.y.length - 1] && (trace6.y[trace6.y.length - 1] >= trace6.y[trace6.y.length - 2] && trace7.y[trace7.y.length - 1] > trace8.y[trace8.y.length - 1])) {
-    //   settings[0].trend = 'up';
-    // } else {
-    //   if (openBuyOrders.length > 0) {
-    //     cancelBuys();
-    //   }
-    //   settings[0].trend = 'down';
-    //   for (let index = 0; index < 20; index++) {
-    //     clearTimeout(timeOut);
-    //   }
-    // }
+  //   // if (trace6.y[trace6.y.length - 1] > trace7.y[trace7.y.length - 1] && (trace6.y[trace6.y.length - 1] >= trace6.y[trace6.y.length - 2] && trace7.y[trace7.y.length - 1] > trace8.y[trace8.y.length - 1])) {
+  //   //   settings[0].trend = 'up';
+  //   // } else {
+  //   //   if (openBuyOrders.length > 0) {
+  //   //     cancelBuys();
+  //   //   }
+  //   //   settings[0].trend = 'down';
+  //   //   for (let index = 0; index < 20; index++) {
+  //   //     clearTimeout(timeOut);
+  //   //   }
+  //   // }
 
-    // if (trace1.y[trace1.y.length - 1] < trace1.y[trace1.y.length - 2] || trace5.y[trace1.y.length - 1] < trace5.y[trace5.y.length - 2]) {
-    //   if (openBuyOrders.length > 0) {
-    //     cancelBuys();
-    //   }
-    //   settings[0].trend = 'down';
-    //   for (let index = 0; index < 20; index++) {
-    //     clearTimeout(timeOut);
-    //   }
-    // } 
+  //   // if (trace1.y[trace1.y.length - 1] < trace1.y[trace1.y.length - 2] || trace5.y[trace1.y.length - 1] < trace5.y[trace5.y.length - 2]) {
+  //   //   if (openBuyOrders.length > 0) {
+  //   //     cancelBuys();
+  //   //   }
+  //   //   settings[0].trend = 'down';
+  //   //   for (let index = 0; index < 20; index++) {
+  //   //     clearTimeout(timeOut);
+  //   //   }
+  //   // } 
 
-    if (buys.length >= settings[0].avlToStart) {
-      currentSellPrice = parseFloat(sells[sells.length - 1].price).toFixed(settings[0].decimalPlace);
-      handleBuySell(currentSellPrice);
-      let buyPrice = parseFloat(buys[buys.length - 1].price);
-      spread = parseFloat(sells[sells.length - 1].price) - parseFloat(buys[buys.length - 1].price);
-      //placeSpreadOrder(spread, buyPrice);
-      //handleOpenBuyOrder(buyPrice, spread);
-      //handleOpenSellOrder(currentSellPrice);
-      console.log('buys:', buys.length, 'sells:', sells.length);
-      console.log('SPD:', spread);
-      console.log('BPR:', buyPrice);
-      console.log('SPR:', currentSellPrice);
-      console.log('STE:', settings[0].state);
-      console.log('TRD:', settings[0].trend[settings[0].trend.length - 1], settings[0].trend[settings[0].trend.length - 2]);
+  //   if (buys.length >= settings[0].avlToStart) {
+  //     currentSellPrice = parseFloat(sells[sells.length - 1].price).toFixed(settings[0].decimalPlace);
+  //     handleBuySell(currentSellPrice);
+  //     let buyPrice = parseFloat(buys[buys.length - 1].price);
+  //     spread = parseFloat(sells[sells.length - 1].price) - parseFloat(buys[buys.length - 1].price);
+  //     //placeSpreadOrder(spread, buyPrice);
+  //     //handleOpenBuyOrder(buyPrice, spread);
+  //     //handleOpenSellOrder(currentSellPrice);
+  //     console.log('buys:', buys.length, 'sells:', sells.length);
+  //     console.log('SPD:', spread);
+  //     console.log('BPR:', buyPrice);
+  //     console.log('SPR:', currentSellPrice);
+  //     console.log('STE:', settings[0].state);
+  //     console.log('TRD:', settings[0].trend[settings[0].trend.length - 1], settings[0].trend[settings[0].trend.length - 2]);
       
-      // if ( spread >= settings[0].minSpread && (settings[0].state === null && settings[0].trend === 'up')) {
-      //   timeOut = setTimeout(function(){ debounceBuy(buyPrice); }, 4000);
-      // } 
+  //     // if ( spread >= settings[0].minSpread && (settings[0].state === null && settings[0].trend === 'up')) {
+  //     //   timeOut = setTimeout(function(){ debounceBuy(buyPrice); }, 4000);
+  //     // } 
 
-      // if (boughtArray.length > 0) {
-      //   boughtArray.forEach(buy => {
-      //     if (settings[0].trend === 'up') {
-      //       console.log('Going Up Still', buy);
-      //     } else {
-      //       placeSellOrders(buy.quantity, buy.orderId);
-      //       buy.orderId = null;
-      //     }
-      //   });
-      // }
+  //     // if (boughtArray.length > 0) {
+  //     //   boughtArray.forEach(buy => {
+  //     //     if (settings[0].trend === 'up') {
+  //     //       console.log('Going Up Still', buy);
+  //     //     } else {
+  //     //       placeSellOrders(buy.quantity, buy.orderId);
+  //     //       buy.orderId = null;
+  //     //     }
+  //     //   });
+  //     // }
     
-      if (sells.length >= settings[0].avlMax) {
-        sells.shift();
-      }
-      if (buys.length >= settings[0].avlMax) {
-        buys.shift();
-      }
-      if (settings[0].trend.length > 5) {
-        settings[0].trend.shift();
-      }
-    }
-  });
+  //     if (sells.length >= settings[0].avlMax) {
+  //       sells.shift();
+  //     }
+  //     if (buys.length >= settings[0].avlMax) {
+  //       buys.shift();
+  //     }
+  //     if (settings[0].trend.length > 5) {
+  //       settings[0].trend.shift();
+  //     }
+  //   }
+  // });
 
-  function balance_update(data) {
-    // console.log('Balance Update');
-    // for ( let obj of data.B ) {
-    //   let { a:asset, f:available, l:onOrder } = obj;
-    //   if ( available == '0.00000000' ) continue;
-    //   console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
-    // }
-  }
-  function execution_update(data) {
-    let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
-    if (symbol === settings[0].ticker) {
-      if ( executionType == 'NEW' ) {
-        if ( orderStatus == 'REJECTED' ) {
-          console.log('Order Failed! Reason: '+data.r);
-          return;
-        }
-      }
-      //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-      console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
-      console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
-      console.log('..price: '+price+', quantity: '+quantity);
+  // function balance_update(data) {
+  //   // console.log('Balance Update');
+  //   // for ( let obj of data.B ) {
+  //   //   let { a:asset, f:available, l:onOrder } = obj;
+  //   //   if ( available == '0.00000000' ) continue;
+  //   //   console.log(asset+'\tavailable: '+available+' ('+onOrder+' on order)');
+  //   // }
+  // }
+  // function execution_update(data) {
+  //   let { x:executionType, s:symbol, p:price, q:quantity, S:side, o:orderType, i:orderId, X:orderStatus } = data;
+  //   if (symbol === settings[0].ticker) {
+  //     if ( executionType == 'NEW' ) {
+  //       if ( orderStatus == 'REJECTED' ) {
+  //         console.log('Order Failed! Reason: '+data.r);
+  //         return;
+  //       }
+  //     }
+  //     //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
+  //     console.log(symbol+'\t'+side+' '+executionType+' '+orderType+' ORDER #'+orderId);
+  //     console.log(symbol+' '+side+' '+orderType+' ORDER #'+orderId+' ('+orderStatus+')');
+  //     console.log('..price: '+price+', quantity: '+quantity);
 
-      if (side === 'BUY' && orderStatus === 'FILLED') {
-        settings[0].state = null;
-        // console.log('filled quantity: ',quantity);
-        // placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
-        // if (parseFloat(quantity) === 2.00000000) {
-        //   placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
-        // } else 
-        if (parseFloat(quantity) === 3.00000000) {
-          globalTrendBuyPrice = parseFloat(closetrace1.y[closetrace1.y.length - 1]);
-        }
-        // boughtArray.push({
-        //   price: parseFloat(price),
-        //   quantity: quantity,
-        //   orderId: orderId
-        // })
-        return;
-      } else if (side === 'SELL' && orderStatus === 'FILLED') {
-        settings[0].state = null;
-        settings[0].sellPrice = null;
-        settings[0].sellOrderNum = null;
-        settings[0].buyPrice = null;
-        //settings[0].buyOrderNum = null;
-        return;
-      } else if (side === 'BUY' && orderStatus === 'NEW') {
-        //placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
-        settings[0].state = 'Buying';
-        settings[0].buyPrice = price;
-        settings[0].buyOrderNum = orderId;
-        // openBuyOrders.push({
-        //   orderId: orderId,
-        //   price: parseFloat(price)
-        // });
-        // let openBuys = [];
-        // openBuyOrders.forEach(order => {
-        //   if (order.orderId !== null) {
-        //     openBuys.push(order);
-        //   } 
-        // });
-        // openBuyOrders = openBuys;
-        return;
-      } else if (side === 'SELL' && orderStatus === 'NEW') {
-        settings[0].state = null;
-        settings[0].sellPrice = price;
-        settings[0].sellOrderNum = orderId;
-        // openSellOrders.push({
-        //   orderId: orderId,
-        //   price: parseFloat(price)
-        // });
-        // let openSells = [];
-        // openSellOrders.forEach(order => {
-        //   if (order.orderId !== null) {
-        //     openSells.push(order);
-        //   } 
-        // });
-        // openSellOrders = openSells;
-        return;
-      } else if (side === 'BUY' && orderStatus === 'PARTIALLY_FILLED') {
-        // settings[0].state = 'buyPartialFill';
-        return;
-      } else if (side === 'SELL' && orderStatus === 'PARTIALLY_FILLED') {
-        // settings[0].state = 'sellPartialFill';
-        return;
-      } else if (side === 'SELL' && orderStatus === 'CANCELED') {
-        // settings[0].state = 'RelistSell';
-        settings[0].sellPrice = null;
-        settings[0].sellOrderNum = null;
-        return;
-      } else if (side === 'BUY' && orderStatus === 'CANCELED') {
-        settings[0].state = null;
-        settings[0].buyPrice = null;
-        // settings[0].buyOrderNum = null;
-        return;
-      } else {
-        return;
-      }
-    }
-  }
-  binance.websockets.userData(balance_update, execution_update);
+  //     if (side === 'BUY' && orderStatus === 'FILLED') {
+  //       settings[0].state = null;
+  //       // console.log('filled quantity: ',quantity);
+  //       // placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
+  //       // if (parseFloat(quantity) === 2.00000000) {
+  //       //   placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
+  //       // } else 
+  //       if (parseFloat(quantity) === 3.00000000) {
+  //         globalTrendBuyPrice = parseFloat(closetrace1.y[closetrace1.y.length - 1]);
+  //       }
+  //       // boughtArray.push({
+  //       //   price: parseFloat(price),
+  //       //   quantity: quantity,
+  //       //   orderId: orderId
+  //       // })
+  //       return;
+  //     } else if (side === 'SELL' && orderStatus === 'FILLED') {
+  //       settings[0].state = null;
+  //       settings[0].sellPrice = null;
+  //       settings[0].sellOrderNum = null;
+  //       settings[0].buyPrice = null;
+  //       //settings[0].buyOrderNum = null;
+  //       return;
+  //     } else if (side === 'BUY' && orderStatus === 'NEW') {
+  //       //placeSellOrder(parseFloat(price) + parseFloat(settings[0].spreadProfit));
+  //       settings[0].state = 'Buying';
+  //       settings[0].buyPrice = price;
+  //       settings[0].buyOrderNum = orderId;
+  //       // openBuyOrders.push({
+  //       //   orderId: orderId,
+  //       //   price: parseFloat(price)
+  //       // });
+  //       // let openBuys = [];
+  //       // openBuyOrders.forEach(order => {
+  //       //   if (order.orderId !== null) {
+  //       //     openBuys.push(order);
+  //       //   } 
+  //       // });
+  //       // openBuyOrders = openBuys;
+  //       return;
+  //     } else if (side === 'SELL' && orderStatus === 'NEW') {
+  //       settings[0].state = null;
+  //       settings[0].sellPrice = price;
+  //       settings[0].sellOrderNum = orderId;
+  //       // openSellOrders.push({
+  //       //   orderId: orderId,
+  //       //   price: parseFloat(price)
+  //       // });
+  //       // let openSells = [];
+  //       // openSellOrders.forEach(order => {
+  //       //   if (order.orderId !== null) {
+  //       //     openSells.push(order);
+  //       //   } 
+  //       // });
+  //       // openSellOrders = openSells;
+  //       return;
+  //     } else if (side === 'BUY' && orderStatus === 'PARTIALLY_FILLED') {
+  //       // settings[0].state = 'buyPartialFill';
+  //       return;
+  //     } else if (side === 'SELL' && orderStatus === 'PARTIALLY_FILLED') {
+  //       // settings[0].state = 'sellPartialFill';
+  //       return;
+  //     } else if (side === 'SELL' && orderStatus === 'CANCELED') {
+  //       // settings[0].state = 'RelistSell';
+  //       settings[0].sellPrice = null;
+  //       settings[0].sellOrderNum = null;
+  //       return;
+  //     } else if (side === 'BUY' && orderStatus === 'CANCELED') {
+  //       settings[0].state = null;
+  //       settings[0].buyPrice = null;
+  //       // settings[0].buyOrderNum = null;
+  //       return;
+  //     } else {
+  //       return;
+  //     }
+  //   }
+  // }
+  // binance.websockets.userData(balance_update, execution_update);
 };
 
 exports.stopSockets = (io) => {
@@ -574,31 +605,31 @@ function declareGlobalTrend(trace1, trace2, trace3, trace3Prev) {
   // } 
 }
 
-function handleBuySell(sellPrice) {
-  if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && settings[0].trend[settings[0].trend.length - 2 ] === 'down') {
-    // trend is going up
-    binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
-  } else if (settings[0].trend[settings[0].trend.length - 1 ] === 'down' && settings[0].trend[settings[0].trend.length - 2 ] === 'up') {
-    // place sell order
-   // binance.marketSell(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
-   placeSellOrder(parseFloat(sellPrice + 0.0050));
-  } else if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && (settings[0].trend[settings[0].trend.length - 4 ] === 'up' && globalTrendBuyPrice !== null)) {
-    takeProfit(parseFloat(sellPrice));
-    console.log('take profit');
-  }
-  // else if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && settings[0].trend[settings[0].trend.length - 2 ] === 'bounce') {
-  //   // trend is going up
-  //   binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
-  // }  else if (settings[0].trend[settings[0].trend.length - 1 ] === 'correcting' && settings[0].trend[settings[0].trend.length - 2 ] === 'up') {
-  //   // place sell order
-  //   binance.marketSell(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
-  // } 
+// function handleBuySell(sellPrice) {
+//   if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && settings[0].trend[settings[0].trend.length - 2 ] === 'down') {
+//     // trend is going up
+//     binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+//   } else if (settings[0].trend[settings[0].trend.length - 1 ] === 'down' && settings[0].trend[settings[0].trend.length - 2 ] === 'up') {
+//     // place sell order
+//    // binance.marketSell(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+//    placeSellOrder(parseFloat(sellPrice + 0.0050));
+//   } else if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && (settings[0].trend[settings[0].trend.length - 4 ] === 'up' && globalTrendBuyPrice !== null)) {
+//     takeProfit(parseFloat(sellPrice));
+//     console.log('take profit');
+//   }
+//   // else if (settings[0].trend[settings[0].trend.length - 1 ] === 'up' && settings[0].trend[settings[0].trend.length - 2 ] === 'bounce') {
+//   //   // trend is going up
+//   //   binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+//   // }  else if (settings[0].trend[settings[0].trend.length - 1 ] === 'correcting' && settings[0].trend[settings[0].trend.length - 2 ] === 'up') {
+//   //   // place sell order
+//   //   binance.marketSell(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+//   // } 
    
-  // else if (settings[0].reset && settings[0].trend[settings[0].trend.length - 1 ] === 'up') {
-    // binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
-    // settings[0].reset = false;
-  // }
-}
+//   // else if (settings[0].reset && settings[0].trend[settings[0].trend.length - 1 ] === 'up') {
+//     // binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+//     // settings[0].reset = false;
+//   // }
+// }
 
 function placeSpreadOrder(spread, buyPrice) {
   if (spread >= settings[0].minSpread && (settings[0].trend[settings[0].trend.length - 1 ] === 'up' || settings[0].trend[settings[0].trend.length - 1 ] === 'bounce')) {
@@ -627,6 +658,8 @@ function handleOpenSellOrder(currentSellPrice) {
 }
 
 function graph1mCandleStick(close, io) {
+  let closeData = [ closetrace1, closetrace2, closetrace3, closetrace4 ];
+
   if (closetrace1.x.length > 2) {
     closetrace1.x.push(Date.now());
     closetrace1.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
@@ -744,5 +777,164 @@ function takeProfit(sellPrice) {
     //settings[0].reset = true;
     //settings[0].trend = [];
     globalTrendBuyPrice = null;
+  }
+}
+
+function graphEma(close, time, io, chartName) {
+
+  let closeData = [ closetrace1, closetrace2, closetrace3, closetrace4, closetrace5, closetrace6 ];
+  if (closetrace1.x.length > 2) {
+    closetrace1.x.push(time);
+    closetrace1.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+    closetrace2.x.push(time);
+    closetrace2.y.push(calculateMovingAverage(close,closetrace2.y[closetrace2.y.length - 1], 7));
+    closetrace3.x.push(time);
+    closetrace3.y.push(calculateMovingAverage(close,closetrace3.y[closetrace3.y.length - 1], 25));
+    closetrace4.x.push(time);
+    closetrace4.y.push(calculateMovingAverage(close,closetrace4.y[closetrace4.y.length - 1], 99));
+    mapPercentage(closetrace1.y, closetrace2.y, closetrace3.y, closetrace4.y, closetrace5.y, closetrace6.y, time, close, io);
+    declareTrend(closetrace1.y, closetrace2.y, closetrace3.y, closetrace4.y, closetrace5.y, closetrace6.y, time, close );
+  } else {
+    closetrace1.x.push(time);
+    closetrace1.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+    closetrace2.x.push(time);
+    closetrace2.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+    closetrace3.x.push(time);
+    closetrace3.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+    closetrace4.x.push(time);
+    closetrace4.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+    mapPercentage(closetrace1.y, closetrace2.y, closetrace3.y, closetrace4.y, closetrace5.y, closetrace6.y, time, close, io);
+    declareTrend(closetrace1.y, closetrace2.y, closetrace3.y, closetrace4.y, closetrace5.y, closetrace6.y, time, close );
+  }
+  handleBuySell(time, close);
+  
+  console.log('sum5:', _.sum(closetrace5.y));
+  console.log('sum6:', _.sum(closetrace6.y));
+  console.log('profit:', parseFloat(_.sum(closetrace6.y)) - parseFloat(_.sum(closetrace5.y)))
+  io.emit(chartName, closeData);
+}
+
+function getSocketChartData(ticker, interval, chartName, io) {
+  let chartData = null;
+  binance.websockets.chart(ticker, interval, (symbol, interval, chart) => {
+    let tick = binance.last(chart);
+    const last = chart[tick].close;
+    //console.log(chart);
+    chartData = chart;
+
+    //console.log(result[0]);
+    // Optionally convert 'chart' object to array:
+    // let ohlc = binance.ohlc(chart);
+    // console.log(symbol, ohlc);
+    console.log(chart[tick]);
+    if (chart[tick].hasOwnProperty('isFinal') === false) {
+      graphEma(parseFloat(chart[tick].close), Date.now(), io, chartName);
+    }
+    console.log(symbol+" last price: "+last);
+  });
+
+  timeOut = setTimeout(function(){
+    Object.keys(chartData).map(function(key) {
+      
+      graphEma(parseFloat(chartData[key].close), parseFloat(key), io, chartName)
+      
+      //return [{[key]: chartData[key]}];
+    });
+  }, 4000);
+}
+
+function declareTrend(trace1, trace2, trace3, trace4, trace5, trace6, time, close) {
+  if (trace2[trace2.length - 1] > trace3[trace3.length - 1] && trace3[trace3.length - 1] > trace4[trace4.length - 1]) {
+    settings[0].trend.push('up');
+  } else if (trace2[trace2.length - 1] < trace3[trace3.length - 1] && trace3[trace3.length - 1] < trace4[trace4.length - 1]) {
+    settings[0].trend.push('down');
+  }
+  
+  if (settings[0].trend.length > 5) {
+    settings[0].trend.shift();
+  }
+}
+
+let openOrders = [];
+function handleBuySell(time, close) {
+  if (percentageTrace2Trace4.y[percentageTrace2Trace4.y.length - 1] > percentageTrace3Trace4.y[percentageTrace3Trace4.y.length - 1] && (settings[0].percentageTrend[settings[0].percentageTrend.length - 1 ] === 'down' && settings[0].percentageTrend[settings[0].percentageTrend.length - 2 ] === 'up')) {
+    // sell
+    if (percentageTrace2Trace4.y[percentageTrace2Trace4.y.length - 1 ] > 100.1) {
+      
+        settings[0].orderTrend99.forEach((boughtOrder, i) => {
+          if (parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)) > parseFloat(boughtOrder)) {
+
+            closetrace6.x.push(time);
+            closetrace6.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+            settings[0].orderTrend99[i] = null;
+            if (engage === true) {
+              binance.marketSell(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+            }
+          }
+        });
+        settings[0].orderTrend99.forEach(order => {
+          if (order !== null) {
+            openOrders.push(order);
+          } 
+        });
+      settings[0].orderTrend99 = openOrders;
+      openOrders = [];
+      console.log('sot',settings[0].orderTrend99);
+      console.log('OO',openOrders);
+    }
+  } else if (percentageTrace2Trace4.y[percentageTrace2Trace4.y.length - 1] < percentageTrace3Trace4.y[percentageTrace3Trace4.y.length - 1] && (settings[0].percentageTrend[settings[0].percentageTrend.length - 1 ] === 'up' && settings[0].percentageTrend[settings[0].percentageTrend.length - 2 ] === 'down')) {
+    // buy
+    if (percentageTrace2Trace4.y[percentageTrace2Trace4.y.length - 1 ] < 99.9) {
+      settings[0].orderTrend99.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+      closetrace5.x.push(time);
+      closetrace5.y.push(parseFloat(parseFloat(close).toFixed(settings[0].decimalPlace)));
+
+      if (engage === true) {
+        binance.marketBuy(settings[0].ticker, settings[0].globalTrendQuantity.toFixed(settings[0].decimalPlace));
+      }
+    }
+    
+  }
+}
+let percentageTrace2Trace3 = {
+  x: [],
+  y: [],
+  mode: 'markers',
+  name: 'Percentage'
+};
+let percentageTrace2Trace4 = {
+  x: [],
+  y: [],
+  mode: 'markers',
+  name: 'Percentage'
+};
+let percentageTrace3Trace4 = {
+  x: [],
+  y: [],
+  mode: 'markers',
+  name: 'Percentage'
+};
+
+function mapPercentage(trace1, trace2, trace3, trace4, trace5, trace6, time, close, io) {
+  
+  let percentageData = [ percentageTrace2Trace3, percentageTrace2Trace4, percentageTrace3Trace4 ];
+  percentageTrace2Trace3.x.push(time);
+  percentageTrace2Trace3.y.push(parseFloat(trace2[trace2.length - 1])/parseFloat(trace3[trace3.length - 1]) * 100);
+  percentageTrace2Trace4.x.push(time);
+  percentageTrace2Trace4.y.push(parseFloat(trace2[trace2.length - 1])/parseFloat(trace4[trace4.length - 1]) * 100);
+  percentageTrace3Trace4.x.push(time);
+  percentageTrace3Trace4.y.push(parseFloat(trace3[trace3.length - 1])/parseFloat(trace4[trace4.length - 1]) * 100);
+  declarePercentageTrend(percentageTrace2Trace4.y);
+  io.emit('PercentageChart', percentageData);
+}
+
+function declarePercentageTrend(trace) {
+  if (trace[trace.length - 1] > trace[trace.length - 2]) {
+    settings[0].percentageTrend.push('up');
+  } else {
+    settings[0].percentageTrend.push('down');
+  }
+  if (settings[0].percentageTrend.length > 60) {
+    settings[0].percentageTrend.shift();
   }
 }

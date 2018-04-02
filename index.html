@@ -37,7 +37,8 @@
         </div>
         <div class='col-12 col-md-8'>
           <div id="closeDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
-          <div id="volumeGraph"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="BNBUSDTEMA"><!-- Plotly chart will be drawn inside this DIV --></div>
+          <div id="PercentageChart"><!-- Plotly chart will be drawn inside this DIV --></div>
           <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
 
         </div>
@@ -87,13 +88,31 @@
           Plotly.newPlot('closeDiv', closeData, closeLayout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
-        socket.on('volumeData', function(volumeData){
+        socket.on('BNBUSDTEMA', function(closeData){
           const volumeLayout = {
-            title:'Volume Data',
+            title:'BNBUSDT EMA Data',
             aspectmode: 'cube'
           };
           //console.log(closeData);
-          Plotly.newPlot('volumeGraph', volumeData, volumeLayout);
+          Plotly.newPlot('BNBUSDTEMA', closeData, volumeLayout);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+        socket.on('PercentageChart', function(percentageData){
+          const volumeLayout = {
+            title:'PercentageChart Data',
+            aspectmode: 'cube'
+          };
+          //console.log(closeData);
+          Plotly.newPlot('PercentageChart', percentageData, volumeLayout);
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+        socket.on('BTCUSDTEMA', function(closeData){
+          const volumeLayout = {
+            title:'BTCUSDT EMA Data',
+            aspectmode: 'cube'
+          };
+          //console.log(closeData);
+          Plotly.newPlot('BTCUSDTEMA', closeData, volumeLayout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
       });
