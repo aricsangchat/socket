@@ -34,7 +34,7 @@
           <div id="BNBUSDTEMA"><!-- Plotly chart will be drawn inside this DIV --></div>
           <div id="PercentageChart"><!-- Plotly chart will be drawn inside this DIV --></div>
           <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
-
+          <div id="charts"></div>
         </div>
       </div>
     </div>
@@ -64,51 +64,38 @@
           //console.log(neuralTrainingData);
           //window.scrollTo(0, document.body.scrollHeight);
         });
-        socket.on('graphData', function(graphData){
-          const layout = {
-            title:'Real Time Crypto Data',
+        socket.on('chart', function(closeData, chartName){
+          let ran = false;
+          const chartLayout = { 
+            title: chartName,
             aspectmode: 'cube'
           };
-
-          Plotly.newPlot('myDiv', graphData, layout);
+          if (ran !== true) {
+            console.log(closeData, chartName);
+            let div = document.createElement('div');
+            div.setAttribute("id", chartName);
+            document.getElementById("charts").appendChild(div);
+            ran = true;
+          }
+          Plotly.newPlot(chartName, closeData, chartLayout);
           //window.scrollTo(0, document.body.scrollHeight);
         });
-        socket.on('closeData', function(closeData){
-          const closeLayout = {
-            title:'Close Data',
-            aspectmode: 'cube'
-          };
-          //console.log(closeData);
-          Plotly.newPlot('closeDiv', closeData, closeLayout);
-          //window.scrollTo(0, document.body.scrollHeight);
-        });
-        socket.on('BNBUSDTEMA', function(closeData){
-          const volumeLayout = {
-            title:'BNBUSDT EMA Data',
-            aspectmode: 'cube'
-          };
-          //console.log(closeData);
-          Plotly.newPlot('BNBUSDTEMA', closeData, volumeLayout);
-          //window.scrollTo(0, document.body.scrollHeight);
-        });
-        socket.on('PercentageChart', function(percentageData){
-          const volumeLayout = {
-            title:'PercentageChart Data',
-            aspectmode: 'cube'
-          };
-          //console.log(closeData);
-          Plotly.newPlot('PercentageChart', percentageData, volumeLayout);
-          //window.scrollTo(0, document.body.scrollHeight);
-        });
-        socket.on('BTCUSDTEMA', function(closeData){
-          const volumeLayout = {
-            title:'BTCUSDT EMA Data',
-            aspectmode: 'cube'
-          };
-          //console.log(closeData);
-          Plotly.newPlot('BTCUSDTEMA', closeData, volumeLayout);
-          //window.scrollTo(0, document.body.scrollHeight);
-        });
+        // socket.on('PercentageChart', function(percentageData, chartName){
+        //   let ran = false;
+        //   const chartLayout = {
+        //     title:'PercentageChart Data',
+        //     aspectmode: 'cube'
+        //   };
+        //   if (ran !== true) {
+        //     console.log(percentageData, chartName);
+        //     let div = document.createElement('div');
+        //     div.setAttribute("id", chartName);
+        //     document.getElementById("charts").appendChild(div);
+        //     ran = true;
+        //   }
+        //   Plotly.newPlot(chartName, percentageData, chartLayout);
+        //   //window.scrollTo(0, document.body.scrollHeight);
+        // });
       });
 
     </script>

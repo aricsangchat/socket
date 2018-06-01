@@ -3,6 +3,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 const bot = require('./bot');
+let settings = require('./settings.js');
 const helpers = require('./helpers/helpers.js');
 
 app.get('/', function(req, res){
@@ -16,7 +17,7 @@ io.on('connection', function(socket){
     } else if (msg === 'stop') {
       helpers.stopSockets(io);
     } else {
-      helpers.outputCommand(io, msg);
+      settings.outputCommand(io, msg);
     }
     io.emit('botLog', msg);
   });
