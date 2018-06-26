@@ -113,9 +113,9 @@ function graphEma(close, time, io, chartName, last) {
   handleBuySell(time, close, last);
   //handleUpDownBuySell(time, close, last);
   
-  console.log('sum5:', _.sum(closetrace5.y));
-  console.log('sum6:', _.sum(closetrace6.y));
-  console.log('profit:', parseFloat(_.sum(closetrace6.y)) - parseFloat(_.sum(closetrace5.y)));
+  console.log('Total Bought:', _.sum(closetrace5.y));
+  console.log('Total Sold:', _.sum(closetrace6.y));
+  console.log('Total Profit:', parseFloat(_.sum(closetrace6.y)) - parseFloat(_.sum(closetrace5.y)));
   io.emit('chart', closeData, 'Close');
 }
 
