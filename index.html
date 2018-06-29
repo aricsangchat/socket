@@ -3,7 +3,7 @@
   <head>
     <title>Socket.IO chat</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
+      * { box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
@@ -23,10 +23,15 @@
       <div class='row'>
         <div class='col-12 col-md-4'>
           <h2>Socket Bot</h2>
-          <p>start: starts socket bot</p>
-          <p>speed: conservative/aggressive</p>
-          <p>engage: true/false</p>
-          <p>manual sell: clears purchase memory</p>
+          <p>Use these commands to control the bot.</p>
+          <ul>
+            <li><strong>start</strong> - starts socket bot and after 3 minutes sets engage to true</li>
+            <li><strong>speed conservative</strong> - sets speed to conservative (Default Speed)</li>
+            <li><strong>speed aggressive</strong> - sets speed to aggressive</li>
+            <li><strong>engage true</strong> - turns on trading</li>
+            <li><strong>engage false</strong> - turns off trading (after 3 minutes of start automatically switches to true)</li>
+            <li><strong>manual sell</strong> - clears socket bots order memory</li>
+          </ul>
           <ul id="messages"></ul>
         </div>
         <div class='col-12 col-md-8'>
@@ -42,7 +47,7 @@
       <div class='row'>
         <div class='col-12'>
           <form action="">
-            <input id="m" autocomplete="off" /><button>Send</button>
+            <input id="m" placeholder="commands go here!"autocomplete="off" /><button>Send</button>
           </form>        </div>
       </div>
     </div>

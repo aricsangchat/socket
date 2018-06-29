@@ -7,7 +7,7 @@ Socket Bot is connected to the web socket of the Binance and it is programmed to
 * clone repo
 * npm i
 
-Create config.json file and add your Binance Api Key and Secret like so,
+* Create config.json file and add your Binance Api Key and Secret like so,
 ```
 {
   "BINANCE_APIKEY": "api_key_goes_here",
