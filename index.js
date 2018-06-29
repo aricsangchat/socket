@@ -13,7 +13,7 @@ app.get('/', function(req, res){
 io.on('connection', function(socket){
   socket.on('botLog', function(msg){
     if (msg === 'start'){
-      bot.startProgram(io);
+      bot.start(io);
     } else if (msg === 'stop') {
       helpers.stopSockets(io);
     } else {

@@ -4,10 +4,11 @@ const _ = require('lodash');
 const helpers = require('./helpers/helpers.js');
 let settings = require('./settings.js');
 let Chart = require('./helpers/chart.js');
+const config = require('./config.json');
 
 binance.options({
-  'APIKEY':'wh0XcP5dRVMCERbZG8zYmr6eCUdkefP0h5bbaIRTHFnKldeP2qWB9xZPnnycdvAe',
-  'APISECRET':'rXDjEe5bWn22rxygY7qpQC84T3PtotpMP1zfXgNoZFc8DEA5Mu5mgKjJnAkHQhct',
+  'APIKEY': config.BINANCE_APIKEY,
+  'APISECRET':config.BINANCE_APISECRET,
   'test': false,
   'reconnect': false
 });
@@ -58,7 +59,7 @@ let spread = null;
 let spreadSellprice;
 let globalTrendBuyPrice = null;
 
-exports.startProgram = (io) => {
+exports.start = (io) => {
   getSocketChartData('BNBUSDT', '1m', 'BNBUSDTEMA', io);
   let minute = new Chart;
   let hour = new Chart;
