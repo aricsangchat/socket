@@ -13,10 +13,13 @@ app.use(express.static('client'));
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/index.html');
 });
+app.get('/api/get-all-tickers', function(req, res){
+  bot.allTickers();
+});
 
 io.on('connection', function(socket){
   socket.on('botLog', function(msg){
-    if (msg === 'start'){
+    if (msg === 'start') {
       tickerSettings.forEach(tickerSetting => {
         bot.start(tickerSetting.ticker, io);
       })
