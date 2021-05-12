@@ -1,7 +1,7 @@
 module.exports = {
-  ticker: 'BNBUSDT',
+  ticker: 'DOGEUSDT',
   mainCurrency: 'USDT',
-  secCurrency: 'BNB',
+  secCurrency: 'DOGE',
   decimalPlace: 4,
   buyPrice: null,
   buyOrderNum: null,
@@ -27,11 +27,11 @@ module.exports = {
   orderTrend98: ['sold'],
   orderTrend975: ['sold'],
   orderTrendUpNDown: [],
-  tradeSpeed: 'conservative',
+  tradeSpeed: 'aggressive',
   tradeSpeedObj: {
-    one: 99.00,
-    five: 98.90,
-    ten: 98.80,
+    one: 99.90,
+    five: 99.75,
+    ten: 99.50,
   },
   engage: false,
   outputCommand: (io, command) => {

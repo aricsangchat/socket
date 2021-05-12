@@ -1,4 +1,5 @@
 const settings = require('../settings.js');
+const binance = require('node-binance-api');
 
 module.exports = {
   setTradeSpeed: (speed) => {

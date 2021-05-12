@@ -3,7 +3,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 4000;
 const bot = require('./bot');
 let settings = require('./settings.js');
 const helpers = require('./helpers/helpers.js');
@@ -21,7 +21,8 @@ io.on('connection', function(socket){
   socket.on('botLog', function(msg){
     if (msg === 'start') {
       tickerSettings.forEach(tickerSetting => {
-        bot.start(tickerSetting.ticker, io);
+        bot.start(tickerSetting.ticker, io, bot.getAverageBuyPrice);
+        //bot.getAverageBuyPrice()
       })
     } else if (msg === 'stop') {
       helpers.stopSockets(io);

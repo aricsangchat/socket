@@ -1,5 +1,57 @@
 [
   {
     "ticker": "BNBUSDT"
+  },
+  {
+    "ticker": "ETHUSDT"
+  },
+  {
+    "ticker": "LTCUSDT"
+  },
+  {
+    "ticker": "BTCUSDT"
+  },
+  {
+    "ticker": "DOGEUSDT"
+  },
+  {
+    "ticker": "UNIUSDT"
+  },
+  {
+    "ticker": "ADAUSDT"
+  },
+  {
+    "ticker": "BANDUSDT"
+  },
+  {
+    "ticker": "CKBUSDT"
+  },
+  {
+    "ticker": "DOTUSDT"
+  },
+  {
+    "ticker": "WANUSDT"
+  },
+  {
+    "ticker": "RIFUSDT"
+  },
+  {
+    "ticker": "ETCUSDT"
+  },
+  {
+    "ticker": "EOSUSDT"
+  },
+  {
+    "ticker": "1INCHUSDT"
+  },
+  {
+    "ticker": "DENTUSDT"
+  },
+  {
+    "ticker": "YFIUSDT"
+  },
+  {
+    "ticker": "XRPUSDT"
   }
 ]
+

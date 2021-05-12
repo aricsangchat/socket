@@ -28,4 +28,17 @@ $(function () {
     }
     Plotly.newPlot(chartName, closeData, chartLayout);
   });
+  socket.on('rsiChart', function(data, chartName){
+    const chartLayout = { 
+      title: chartName,
+      aspectmode: 'cube'
+    };
+    if (!document.getElementById(chartName)) {
+      console.log(closeData, chartName);
+      let div = document.createElement('div');
+      div.setAttribute("id", chartName);
+      document.getElementById("charts").appendChild(div);
+    }
+    Plotly.newPlot('rsiChart', data, chartLayout);
+  });
 });
