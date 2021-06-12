@@ -4,7 +4,7 @@ const _ = require('lodash');
 const helpers = require('./helpers/helpers.js');
 let settings = require('./settings.js');
 let Chart = require('./helpers/chart.js');
-const config = require('./config.json');
+
 const sound = require("sound-play");
 const path = require("path");
 const buyMp3 = path.join(__dirname, "buy.mp3");
