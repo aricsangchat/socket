@@ -40,3 +40,17 @@ form button {
     max-height: 90vh;
     overflow: scroll; 
 }
+header {
+    padding-top: 1em;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    column-gap: 2em;
+  }
+  
+  header > p {
+    flex: 1;
+    text-align: center;
+    color: #009688;
+    font-weight: bold;
+  }

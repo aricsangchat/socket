@@ -17,8 +17,8 @@ const CrossUp = require('technicalindicators').CrossUp;
 const OBV = require('technicalindicators').OBV;
 const KST = require('technicalindicators').KST;
 const ADX = require('technicalindicators').ADX;
-const CoinbasePro = require('coinbase-pro');
-const publicClient = new CoinbasePro.PublicClient();
+const EMA = require('technicalindicators').EMA
+const TRIX = require('technicalindicators').TRIX; 
 
 // const as = async () => {
 //     const today = new Date();
@@ -82,7 +82,12 @@ let masterDataObject = {
     rsiCrossOver: [],
     liveOpenLongs: [],
     liveOpenShorts: [],
-    kstGap: []
+    kstGap: [],
+    kstUpDown: [],
+    kstSignalUpDown: [],
+    currentPosition: [{position: null, price: null, time: null }],
+    trix: [],
+    trixUpDown: []
 }
 
 
@@ -101,6 +106,7 @@ io.on('connection', function (socket) {
     setInterval(() => {
         io.emit('CHART_DATA', masterDataObject);
     }, 2000);
+    
 });
 
 http.listen(port, function () {
@@ -182,7 +188,7 @@ const connectChart = (setupIndicatorsCallback) => {
 
     const offsetPeriod = (period, data) => {
         for (let index = 0; index <= period; index++) {
-            data.unshift(0)
+            data.unshift(null)
         }
     }
 
@@ -231,7 +237,7 @@ const connectChart = (setupIndicatorsCallback) => {
         
         offsetPeriod(40, masterDataObject.rsi) // 40
         offsetPeriod(24, masterDataObject.secondRSI) // 14
-        console.log(masterDataObject.rsi.length, masterDataObject.secondRSI.length)
+        //console.log(masterDataObject.rsi.length, masterDataObject.secondRSI.length)
     }
 
     const calcVWAP = () => {
@@ -248,10 +254,77 @@ const connectChart = (setupIndicatorsCallback) => {
     }
 
     const calcEntry = () => {
+        masterDataObject.long = []
+        masterDataObject.short = []
+        masterDataObject.currentPosition = []
+        masterDataObject.kstCrossOver = []
+        masterDataObject.rsiCrossOver = []
+
+        const overVWAPEntry = () => {
+            for (let index = 0; index < masterDataObject.time.length; index++) {
+                if (masterDataObject.kstUpDown[index] === 'up' && (masterDataObject.kstUpDown[index - 1] === "down" || masterDataObject.kstUpDown[index - 1] === "flat")) {
+                    if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
+                        masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                        masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                    } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
+                        if (masterDataObject.kst[index] < -12) {
+                            masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+
+                        }
+                    }
+                    
+                }
+                if ( masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                    if (masterDataObject.vwap[index] < masterDataObject.low[index]) {
+                        if (masterDataObject.kstUpDown[index] === 'down' && masterDataObject.kstUpDown[index - 1] === "up") {
+                            masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        } else if (masterDataObject.kstSignalUpDown[index] === 'down' && masterDataObject.kstSignalUpDown[index - 1] === "up") {
+                            masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        
+                        }
+                    } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
+                        if (masterDataObject.kstSignalUpDown[index] === 'down' && masterDataObject.kstSignalUpDown[index - 1] === "up") {
+                            masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        }
+                    }
+
+                    
+                        
+                    
+                    handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                    //handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                    
+                }
+                
+                
+                
+            }
+        }
         
-        
-        
-        if ( masterDataObject.long.length === 0 && hasCalcEntryExecuted === false ) {
+        const handleExit = (lastPrice, lastPurchasePrice, time) => {
+            //console.log(lastPrice, lastPurchasePrice.y + (lastPurchasePrice.y * 0.015))
+            if (lastPrice > lastPurchasePrice.y + (lastPurchasePrice.y * 0.015)) {
+                masterDataObject.short.push({ x: new Date(time), y: lastPrice })
+                masterDataObject.currentPosition.push({position: 'short', price: lastPrice, time: time  })
+            }
+        }
+
+        const handleStopLoss = (lastPrice, lastPurchasePrice, time) => {
+            console.log(lastPrice, lastPurchasePrice.y - (lastPurchasePrice.y * 0.005))
+            // if (masterDataObject.short[masterDataObject.short.length - 1].y) {
+
+            // }
+            if (lastPrice < lastPurchasePrice.y - lastPurchasePrice.y * 0.005) {
+                masterDataObject.short.push({ x: new Date(time), y: lastPrice })
+                masterDataObject.currentPosition.push({position: 'short', price: lastPrice, time: time })
+            }
+        }
+
+        const calKSTCrossover = () => {
             for (let index = 0; index < masterDataObject.time.length; index++) {
                 // Calc KST CrossOver
                 if (masterDataObject.kst[index] < masterDataObject.kstSignal[index]) {
@@ -267,26 +340,41 @@ const connectChart = (setupIndicatorsCallback) => {
                     masterDataObject.rsiCrossOver.push(false)
                 }
             }
-            console.log(masterDataObject.rsiCrossOver)
-
-            for (let index = 60; index < masterDataObject.time.length; index++) {
-                //console.log(masterDataObject.kstGap[index], masterDataObject.kstGap[index - 1])
-                // if (masterDataObject.kstGap[index] === true && (masterDataObject.kstGap[index - 1] === false && masterDataObject.kstSignal[index] < -16.5)) {
-                //     //masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                // }
-                if (masterDataObject.rsiCrossOver[index] === true && masterDataObject.rsiCrossOver[index - 1] === false) {
-                    
-                    if (masterDataObject.secondRSI[index] < 40) {
-                        masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                   }
-                }
-                if (masterDataObject.rsiCrossOver[index] === false && masterDataObject.rsiCrossOver[index - 1] === true) {
-                    masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                }
-            }
-            hasCalcEntryExecuted = true;
         }
 
+        const trixStrategy = (tick) => {
+            for (let index = 0; index < masterDataObject.time.length; index++) {
+                if (masterDataObject.trixUpDown[index] === 'up' && (masterDataObject.trixUpDown[index - 1] === "down" || masterDataObject.trixUpDown[index - 1] === "flat")) {
+                    // if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
+                        masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                        masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                    // } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
+                        // if (masterDataObject.kst[index] < -12) {
+                        //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                        //     masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+
+                        // }
+                    // }
+                    
+                }
+                if (masterDataObject.currentPosition.length > 0) {
+                    if ( masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                        if (masterDataObject.trixUpDown[index] === 'down' && (masterDataObject.trixUpDown[index - 1] === "up" || masterDataObject.trixUpDown[index - 1] === "flat")) {
+                            masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        } 
+                        handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                    }
+                }
+                
+            }
+        }
+
+        return {
+            trixStrategy: (tick) => {
+                trixStrategy()
+            }
+        }
     }
     const calcShort = () => {
         
@@ -412,20 +500,42 @@ const connectChart = (setupIndicatorsCallback) => {
         //     // masterDataObject.kst.push(Math.random(getRandomIntInclusive(masterDataObject.kst[masterDataObject.kst.length - 1], masterDataObject.kst[masterDataObject.kst.length - 1] + 0.55)))
         //     masterDataObject.kstSignal.pop()
         // }
-
-        for (let index = 0; index < masterDataObject.kstSignal.length; index++) {
-            //console.log(masterDataObject.kstSignal[index - 1] + masterDataObject.kst[index - 1],masterDataObject.kstSignal[index] + masterDataObject.kst[index])
-            if (masterDataObject.kstSignal[index - 1] + masterDataObject.kst[index - 1] > masterDataObject.kstSignal[index] + masterDataObject.kst[index]) {
-                masterDataObject.kstGap.push(true)
-            } {
-                masterDataObject.kstGap.push(false)
-            }
+        masterDataObject.kstGap = []
+        // for (let index = 0; index < masterDataObject.kstSignal.length; index++) {
+        //     //console.log(masterDataObject.kstSignal[index - 1] + masterDataObject.kst[index - 1],masterDataObject.kstSignal[index] + masterDataObject.kst[index])
+        //     if (masterDataObject.kstSignal[index - 1] + masterDataObject.kst[index - 1] > masterDataObject.kstSignal[index] + masterDataObject.kst[index]) {
+        //         masterDataObject.kstGap.push(true)
+        //     } {
+        //         masterDataObject.kstGap.push(false)
+        //     }
             
             
-        }
+        // }
         //console.log(masterDataObject.kstGap)
         offsetPeriod(63, masterDataObject.kst);
         offsetPeriod(77, masterDataObject.kstSignal);
+
+        masterDataObject.kstUpDown = []
+        masterDataObject.kstSignalUpDown = []
+        for (let index = 0; index < masterDataObject.kst.length; index++) {
+            if (masterDataObject.kst[index] > masterDataObject.kst[index - 1]) {
+                masterDataObject.kstUpDown.push("up")
+            } else if (masterDataObject.kst[index] === masterDataObject.kst[index - 1]) {
+                masterDataObject.kstUpDown.push("flat")
+            } else if (masterDataObject.kst[index] < masterDataObject.kst[index - 1]) {
+                masterDataObject.kstUpDown.push("down")
+            }
+            if (masterDataObject.kstSignal[index] > masterDataObject.kstSignal[index - 1]) {
+                masterDataObject.kstSignalUpDown.push("up")
+            } else if (masterDataObject.kstSignal[index] === masterDataObject.kstSignal[index - 1]) {
+                masterDataObject.kstSignalUpDown.push("flat")
+            } else if (masterDataObject.kstSignal[index] < masterDataObject.kstSignal[index - 1]) {
+                masterDataObject.kstSignalUpDown.push("down")
+            }
+            
+        }
+        offsetPeriod(0, masterDataObject.kstUpDown);
+        //console.log(masterDataObject.kstUpDown, masterDataObject.kstUpDown.length)
         
         //console.log( masterDataObject.kst.length, masterDataObject.kstSignal.length)
 
@@ -476,6 +586,61 @@ const connectChart = (setupIndicatorsCallback) => {
         //}
     }
 
+    const calcEMA = (period, values) => {
+        EMA.calculate({period : period, values : values})  
+    }
+
+    const calcTRIX = () => {
+        var close = masterDataObject.close;
+
+        let input = {
+        values      : close,
+        period      : 18
+        };
+
+        masterDataObject.trix = TRIX.calculate(input);
+        offsetPeriod(51, masterDataObject.trix)
+
+        masterDataObject.trixUpDown = []
+        for (let index = 0; index < masterDataObject.trix.length; index++) {
+            if (masterDataObject.trix[index] > masterDataObject.trix[index - 1]) {
+                masterDataObject.trixUpDown.push("up")
+            } else if (masterDataObject.trix[index] === masterDataObject.trix[index - 1]) {
+                masterDataObject.trixUpDown.push("flat")
+            } else if (masterDataObject.trix[index] < masterDataObject.trix[index - 1]) {
+                masterDataObject.trixUpDown.push("down")
+            }
+        }
+        //console.log(masterDataObject.trix.length, masterDataObject.trixUpDown)
+    }
+
+    const calcProfit = () => {
+        let longSum = 0;
+        let shortSum = 0;
+        for (let index = 0; index < masterDataObject.long.length; index++) {
+            // console.log(index, masterDataObject.short[index])
+            if (typeof masterDataObject.short[index] !== 'undefined') {
+                longSum = (masterDataObject.short[index].y - masterDataObject.long[index].y) + longSum 
+
+            }
+        }
+        for (let index = 0; index < masterDataObject.short.length; index++) {
+            shortSum = masterDataObject.short[index].y + shortSum 
+        }
+
+        let gross = longSum;
+        let totalTradeAmount = shortSum + longSum;
+        let fees = totalTradeAmount * 0.00075;
+        let net = gross - fees;
+        let shortProfit = (longSum - shortSum) * -1;
+
+
+        console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)) )
+
+        io.emit('PROFIT_LOG', {gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2))});
+        
+    }
+
     binance.websockets.chart(pair, timeframe, (symbol, interval, chart) => {
         let tick = binance.last(chart);
         //const last = chart[tick].close;
@@ -497,10 +662,13 @@ const connectChart = (setupIndicatorsCallback) => {
             calcOBV()
             calcKst()
             calcADX()
+            //calcEMA()
+            calcTRIX()
 
             // Entry runs last
-            calcEntry()
-            calcShort()
+            calcEntry().trixStrategy()
+            //calcShort()
+            calcProfit()
 
             //handleLiveSpotTrading()
             setInterval(() => {
@@ -513,11 +681,17 @@ const connectChart = (setupIndicatorsCallback) => {
                 calcOBV()
                 calcKst()
                 calcADX()
+                //calcEMA()
+                calcTRIX()
 
                 // Entry runs last
-                calcEntry()
-                calcShort()
-                //handleLiveSpotTrading()
+                if (isFinal) {
+                    calcEntry(tick).trixStrategy(tick)
+                    //calcShort()
+                    calcProfit()
+                    //handleLiveSpotTrading()
+                }
+                
             }, 2000);
 
             hasExecuted = true;

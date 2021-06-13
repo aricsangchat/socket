@@ -18,6 +18,7 @@ $(function () {
     let pdiData = [];
     let mdiData = [];
     let secondRSIData = [];
+    let trixData = [];
 
     let hasChartExecuted = false;
     let chartsLoaded = false;
@@ -78,6 +79,7 @@ $(function () {
         pdiData = [];
         mdiData = [];
         secondRSIData = [];
+        trixData = [];
         //console.log(masterObject.adx)
         for (let index = 0; index < masterObject.time.length; index++) {
             //console.log(masterObject.adx.length)
@@ -90,13 +92,16 @@ $(function () {
             
             fiData.push({ x: new Date(masterObject.time[index]), y: masterObject.fi[index] })
             obvData.push({ x: new Date(masterObject.time[index]), y: masterObject.obv[index] })
+            trixData.push({ x: new Date(masterObject.time[index]), y: masterObject.trix[index] })
             
+            if (masterObject.adx[index] !== null) {
+                adxData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index].adx })
+                pdiData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index].pdi })
+                mdiData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index].mdi })
+            }
             
-            
-            adxData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index] == 0 ? 0 : masterObject.adx[index].adx })
-            pdiData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index] == 0 ? 0 : masterObject.adx[index].pdi })
-            mdiData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index] == 0 ? 0 : masterObject.adx[index].mdi })
         }
+        
         for (let index = 0; index < masterObject.mfi.length; index++) {
             //console.log(index, masterObject.kst.length)
             mfiData.push({ x: new Date(masterObject.time[index]), y: masterObject.mfi[index] })
@@ -107,7 +112,7 @@ $(function () {
             secondRSIData.push({ x: new Date(masterObject.time[index]), y: masterObject.secondRSI[index] })
         }
         for (let index = 0; index < masterObject.kst.length; index++) {
-            console.log(index, masterObject.kst.length)
+            //console.log(index, masterObject.kst.length)
             kstData.push({ x: new Date(masterObject.time[index]), y: masterObject.kst[index] })
         }
         for (let index = 0; index < masterObject.kstSignal.length; index++) {
@@ -139,11 +144,13 @@ $(function () {
 
             fiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.fi[masterObject.fi.length - 1] })
             obvData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.obv[masterObject.obv.length - 1] })
+            trixData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.trix[masterObject.trix.length - 1] })
             
             kstData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.kst[masterObject.kst.length - 1] })
             kstSignalData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.kstSignal[masterObject.kstSignal.length - 1] })
 
             longData.push({ x: new Date(masterObject.long[masterObject.long.length - 1].x), y: masterObject.long[masterObject.long.length - 1].y })
+            //console.log(shortData)
             shortData.push({ x: new Date(masterObject.short[masterObject.short.length - 1].x), y: masterObject.short[masterObject.short.length - 1].y })
 
             adxData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.adx[masterObject.adx.length - 1] === 0 ? 0 : masterObject.adx[masterObject.adx.length - 1].adx })
@@ -169,6 +176,7 @@ $(function () {
             adxData.pop()
             pdiData.pop()
             mdiData.pop()
+            trixData.pop()
             longData.push({ x: new Date(masterObject.long[masterObject.long.length - 1].x), y: masterObject.long[masterObject.long.length - 1].y })
             shortData.push({ x: new Date(masterObject.short[masterObject.short.length - 1].x), y: masterObject.short[masterObject.short.length - 1].y })
 
@@ -188,6 +196,7 @@ $(function () {
 
             fiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.fi[masterObject.fi.length - 1] })
             obvData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.obv[masterObject.obv.length - 1] })
+            trixData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.trix[masterObject.trix.length - 1] })
 
             kstData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.kst[masterObject.kst.length - 1] })
             kstSignalData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.kstSignal[masterObject.kstSignal.length - 1] })
@@ -212,6 +221,7 @@ $(function () {
         obvChart()
         kstChart()
         adxChart()
+        trixChart()
         // createLineChart({
         //     idSelector: "obvChart",
         //     name: 'OBV Chart',
@@ -940,8 +950,91 @@ $(function () {
         }
     }
 
+    const trixChart = (options) => {
+
+        trixChartInstance = new CanvasJS.Chart("trixChart", {
+            //animationEnabled: true,
+            // theme: "dark2", // "light1", "light2", "dark1", "dark2"
+            backgroundColor: "transparent",
+            colorSet: "candyShades",
+            dataPointMinWidth: 1,
+            exportEnabled: true,
+            zoomEnabled: true,
+            // dataPointWidth: 2,
+            title: {
+                text: "TRIX Chart"
+            },
+            subtitles: [{
+                text: ""
+            }],
+            axisX: {
+                valueFormatString: "MMM-DD hh:mm",
+                //lineThickness: 1,
+                gridColor: "#4C5270",
+                lineThickness: 0,
+                gridColor: "rgb(47, 243, 224, 0.03)",
+
+            },
+            axisY: {
+                prefix: "",
+                title: "",
+                //lineThickness: 1,
+                gridColor: "#4C5270",
+                lineThickness: 0,
+                gridColor: "rgb(47, 243, 224, 0.03)",
+                labelPlacement:"inside",
+            },
+            toolTip: {
+                shared: true
+            },
+            legend: {
+                reversed: true,
+                cursor: "pointer",
+                itemclick: toggleDataSeries
+            },
+            data: [{
+                type: "line",
+                lineThickness: 1,
+                //lineColor: "blue",
+                showInLegend: true,
+                name: "OBV",
+                axisYType: "primary",
+                yValueFormatString: "",
+                xValueFormatString: "MMM-DD hh:mm",
+                dataPoints: trixData
+            }]
+        });
+        trixChartInstance.render();
+
+        function toggleDataSeries(e) {
+            if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                e.dataSeries.visible = false;
+            } else {
+                e.dataSeries.visible = true;
+            }
+            e.trixChartInstance.render();
+        }
+    }
+
+    const calculateProfit = (masterObject) => {
+        longSum = masterObject.long.reduce((a, b) => {
+            return a + b;
+        });
+        shortSum = masterObject.short.reduce((a, b) => {
+            return a + b;
+        });
+        console.log(masterObject.long, longSum, shortSum - longSum)
+    }
+
+    socket.on('PROFIT_LOG', function(profit){
+        $("#gross").html(profit.gross);
+        $("#fees").html(profit.fees);
+        $("#net").html(profit.net);
+
+    });
+
     socket.on('CHART_DATA', (masterObject) => {
-        console.log(masterObject.liveOpenLongs, masterObject.liveOpenShorts)
+        //console.log(masterObject.trix)
         if (chartsLoaded === false) {
             mapData(masterObject)
             renderCharts()
