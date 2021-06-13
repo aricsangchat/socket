@@ -48,8 +48,8 @@ const TRIX = require('technicalindicators').TRIX;
 // as()
 
 const binance = new Binance().options({
-    APIKEY: config.BINANCE_APIKEY,
-    APISECRET: config.BINANCE_APISECRET,
+    APIKEY: process.env.bkey ? process.env.bkey : config.BINANCE_APIKEY,
+    APISECRET: process.env.bsec ? process.env.bsec : config.BINANCE_APISECRET,
     test: true,
     reconnect: true
 });
