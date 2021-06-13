@@ -105,10 +105,10 @@ app.get('/', function (req, res) {
 
 io.on('connection', function (socket) {
     // io.emit('CHART_DATA', time, open, high, low, close, volume, sma, mfi, fi, rsi, vwap, entry, positiveCashFlow, negativeCashFlow);
-
+    io.emit('CHART_DATA', masterDataObject);
     setInterval(() => {
         io.emit('CHART_DATA', masterDataObject);
-    }, 60000);
+    }, process.env.bkey ? 60000 : 2000);
     
 });
 
