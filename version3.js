@@ -5,7 +5,10 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const _ = require('lodash');
 var port = process.env.PORT || 3000;
-const config = require('./config.json');
+let config = '';
+if (port === 3000) {
+    config = require('./config.json');
+}
 const Binance = require('node-binance-api');
 const { toNumber } = require('lodash');
 const SMA = require('technicalindicators').SMA;
