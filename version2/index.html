@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket Bot</title>
+    
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/styles.css" media="screen" />
+    <script src="https://cdn.anychart.com/releases/8.10.0/js/anychart-base.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/8.10.0/js/anychart-core.min.js" type="text/javascript"></script>
+    
+  </head>
+  <body>
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='col-12'>
+          <header>
+            <p>Gross:&nbsp;<span id="gross"></span></p>
+            <p>Fees:&nbsp;<span id="fees"></span></p>
+            <p>Net:&nbsp;<span id="net"></span></p>
+          </header>
+          <div id="chartContainer" style="height: 400px; width: 100%;"></div>
+          <div id="trixChart" style="height: 400px; width: 100%;"></div>
+
+          <div id="kstChart" style="height: 400px; width: 100%"></div>
+          <div id="chartContainerTwo" style="height: 400px; width: 100%"></div>
+          <div id="adxChartContainer" style="height: 400px; width: 100%;"></div>
+
+          <div id="chartContainerThree" style="height: 400px; width: 100%;"></div>
+          <div id="obvChart" style="height: 400px; width: 100%;"></div>
+
+        </div>
+      </div>
+      <div class='row'>
+        
+        <div class='col-6'>
+          
+        </div>
+        <div class='col-6'>
+          
+          
+        </div>
+      </div>
+    </div>
+    <div class='container-fluid'>
+      <div class='row'>
+        <div class='col-12'>
+          <form action="">
+            <input id="m" placeholder="commands go here!"autocomplete="off" /><button>Send</button>
+          </form>        
+        </div>
+      </div>
+    </div>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.stock.min.js"></script>
+    <script src="/clientMain.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>
