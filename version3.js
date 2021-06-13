@@ -108,7 +108,7 @@ io.on('connection', function (socket) {
     io.emit('CHART_DATA', masterDataObject);
     setInterval(() => {
         io.emit('CHART_DATA', masterDataObject);
-    }, process.env.bkey ? 60000 : 2000);
+    }, 60000);
     
 });
 
