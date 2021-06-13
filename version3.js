@@ -108,7 +108,7 @@ io.on('connection', function (socket) {
 
     setInterval(() => {
         io.emit('CHART_DATA', masterDataObject);
-    }, 2000);
+    }, 60000);
     
 });
 
