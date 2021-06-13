@@ -248,10 +248,10 @@ $(function () {
                 exportEnabled: true,
                 zoomEnabled: true,
                 title: {
-                    text: "ETHUSDT Visual Chart"
+                    text: "ETHUSDT 5m Chart"
                 },
                 subtitles: [{
-                    text: "Binance Exchance Spot Trading"
+                    text: "Binance Exchange - Spot Trading"
                 }],
                 axisX: {
                     valueFormatString: "MMM-DD hh:mm",

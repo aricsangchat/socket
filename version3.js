@@ -366,7 +366,7 @@ const connectChart = (setupIndicatorsCallback) => {
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
                             masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
                         } 
-                        handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                        //handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
                     }
                 }
                 
@@ -694,8 +694,10 @@ const connectChart = (setupIndicatorsCallback) => {
                     calcProfit()
                     //handleLiveSpotTrading()
                 }
+                calcProfit()
                 
             }, 2000);
+            
 
             hasExecuted = true;
         }
