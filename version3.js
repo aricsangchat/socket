@@ -9,6 +9,10 @@ let config = '';
 if (port === 3000) {
     config = require('./config.json');
 }
+const sound = require("sound-play");
+const path = require("path");
+const buyMp3 = path.join(__dirname, "buy.mp3");
+const sellMp3 = path.join(__dirname, "sell.mp3");
 const Binance = require('node-binance-api');
 const { toNumber } = require('lodash');
 const SMA = require('technicalindicators').SMA;
@@ -351,6 +355,7 @@ const connectChart = (setupIndicatorsCallback) => {
                     // if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
                         masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
                         masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        sound.play(buyMp3);
                     // } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
                         // if (masterDataObject.kst[index] < -12) {
                         //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
@@ -365,6 +370,7 @@ const connectChart = (setupIndicatorsCallback) => {
                         if (masterDataObject.trixUpDown[index] === 'down' && (masterDataObject.trixUpDown[index - 1] === "up" || masterDataObject.trixUpDown[index - 1] === "flat")) {
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
                             masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                            sound.play(sellMp3);
                         } 
                         //handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
                     }
