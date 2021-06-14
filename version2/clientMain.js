@@ -1034,7 +1034,7 @@ $(function () {
     });
 
     socket.on('CHART_DATA', (masterObject) => {
-        //console.log(masterObject.trix)
+        console.log(masterObject.long, masterObject.short)
         if (chartsLoaded === false) {
             mapData(masterObject)
             renderCharts()

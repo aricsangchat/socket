@@ -349,13 +349,31 @@ const connectChart = (setupIndicatorsCallback) => {
             }
         }
 
+        const soundAlarm = () => {
+            console.log(masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1], masterDataObject.time[masterDataObject.time.length - 1])
+            if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].time === masterDataObject.time[masterDataObject.time.length - 1]) {
+                if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                    console.log('sound buy')
+                    sound.play(buyMp3);
+                } else {
+                    console.log('sound sell')
+                    sound.play(sellMp3);
+                }
+            }
+        }
+
         const trixStrategy = (tick) => {
             for (let index = 0; index < masterDataObject.time.length; index++) {
-                if (masterDataObject.trixUpDown[index] === 'up' && (masterDataObject.trixUpDown[index - 1] === "down" || masterDataObject.trixUpDown[index - 1] === "flat")) {
+
+                //console.log(new Date(masterDataObject.time[index]), masterDataObject.trixUpDown.length)
+
+                if (masterDataObject.trixUpDown[index - 1] === 'down' && (masterDataObject.trixUpDown[index] === "up" || masterDataObject.trixUpDown[index] === "flat")) {
                     // if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
+                        
+
                         masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
                         masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
-                        sound.play(buyMp3);
+                        
                     // } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
                         // if (masterDataObject.kst[index] < -12) {
                         //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
@@ -367,21 +385,24 @@ const connectChart = (setupIndicatorsCallback) => {
                 }
                 if (masterDataObject.currentPosition.length > 0) {
                     if ( masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
-                        if (masterDataObject.trixUpDown[index] === 'down' && (masterDataObject.trixUpDown[index - 1] === "up" || masterDataObject.trixUpDown[index - 1] === "flat")) {
+                        if (masterDataObject.trixUpDown[index - 1] === "up" && (masterDataObject.trixUpDown[index] === 'flat' || masterDataObject.trixUpDown[index] === "down")) {
+                            //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
                             masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
-                            sound.play(sellMp3);
+                            
                         } 
                         //handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                        //handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
                     }
                 }
-                
+
             }
         }
 
         return {
             trixStrategy: (tick) => {
                 trixStrategy()
+                soundAlarm()
             }
         }
     }
@@ -620,7 +641,8 @@ const connectChart = (setupIndicatorsCallback) => {
                 masterDataObject.trixUpDown.push("down")
             }
         }
-        //console.log(masterDataObject.trix.length, masterDataObject.trixUpDown)
+        offsetPeriod(0, masterDataObject.trixUpDown)
+        console.log(masterDataObject.trix.length, masterDataObject.trixUpDown.length)
     }
 
     const calcProfit = () => {
@@ -695,7 +717,7 @@ const connectChart = (setupIndicatorsCallback) => {
 
                 // Entry runs last
                 if (isFinal) {
-                    calcEntry(tick).trixStrategy(tick)
+                    calcEntry().trixStrategy()
                     //calcShort()
                     calcProfit()
                     //handleLiveSpotTrading()
