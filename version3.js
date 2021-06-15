@@ -140,10 +140,7 @@ const connectChart = (setupIndicatorsCallback) => {
     let hasCalcShortExecuted = false;
 
     const mapCachedData = (data) => {
-
-
         for (const key in data) {
-            //console.log(`${key}: ${data[key]}`);
             masterDataObject.time.push(convertUnixToTimestamp(toNumber(key)));
             masterDataObject.open.push(toNumber(data[key].open));
             masterDataObject.high.push(toNumber(data[key].high));
@@ -151,9 +148,6 @@ const connectChart = (setupIndicatorsCallback) => {
             masterDataObject.close.push(toNumber(data[key].close));
             masterDataObject.volume.push(toNumber(data[key].volume));
         }
-        //console.log(time[time.length - 1])
-        //console.log(close)
-
     }
 
     const handleCurrentAndFinalTick = (tick, timeStamp) => {

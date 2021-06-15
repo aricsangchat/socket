@@ -19,7 +19,7 @@
   },
   "scripts": {
     "start": "node index.js",
-    "start:dev": "nodemon version3.js",
+    "start:dev": "nodemon version4.js",
     "mkt": "node mkt.js"
   }
 }
