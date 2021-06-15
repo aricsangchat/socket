@@ -19,6 +19,9 @@ $(function () {
     let mdiData = [];
     let secondRSIData = [];
     let trixData = [];
+    let dojiData = [];
+    let bullishData = [];
+    let trixGapData = [];
 
     let hasChartExecuted = false;
     let chartsLoaded = false;
@@ -80,6 +83,10 @@ $(function () {
         mdiData = [];
         secondRSIData = [];
         trixData = [];
+        dojiData = [];
+        bullishData = [];
+        trixGapData = [];
+
         //console.log(masterObject.adx)
         for (let index = 0; index < masterObject.time.length; index++) {
             //console.log(masterObject.adx.length)
@@ -93,6 +100,7 @@ $(function () {
             fiData.push({ x: new Date(masterObject.time[index]), y: masterObject.fi[index] })
             obvData.push({ x: new Date(masterObject.time[index]), y: masterObject.obv[index] })
             trixData.push({ x: new Date(masterObject.time[index]), y: masterObject.trix[index] })
+            trixGapData.push({ x: new Date(masterObject.time[index]), y: masterObject.trixGap[index] })
             
             if (masterObject.adx[index] !== null) {
                 adxData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index].adx })
@@ -100,6 +108,14 @@ $(function () {
                 mdiData.push({ x: new Date(masterObject.time[index]), y: masterObject.adx[index].mdi })
             }
             
+        }
+
+        for (let index = 0; index < masterObject.bullish.length; index++) {
+            bullishData.push({ x: new Date(masterObject.bullish[index].time), y: masterObject.bullish[index].close })
+        }
+
+        for (let index = 0; index < masterObject.doji.length; index++) {
+            dojiData.push({ x: new Date(masterObject.doji[index].time), y: masterObject.doji[index].close })
         }
         
         for (let index = 0; index < masterObject.mfi.length; index++) {
@@ -157,6 +173,10 @@ $(function () {
             pdiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.adx[masterObject.adx.length - 1] === 0 ? 0 : masterObject.adx[masterObject.adx.length - 1].pdi })
             mdiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.adx[masterObject.adx.length - 1] === 0 ? 0 : masterObject.adx[masterObject.adx.length - 1].mdi })
 
+            dojiData.push({ x: new Date(masterObject.doji[masterObject.doji.length - 1].time), y: masterObject.doji[masterObject.doji.length - 1].close })
+            bullishData.push({ x: new Date(masterObject.bullish[masterObject.bullish.length - 1].time), y: masterObject.bullish[masterObject.bullish.length - 1].close })
+
+
         } else {
             //console.log(masterObject.close[masterObject.close.length - 1], closeData[closeData.length - 2], closeData[closeData.length - 1])
             
@@ -177,6 +197,8 @@ $(function () {
             pdiData.pop()
             mdiData.pop()
             trixData.pop()
+            dojiData.pop()
+            bullishData.pop()
             longData.push({ x: new Date(masterObject.long[masterObject.long.length - 1].x), y: masterObject.long[masterObject.long.length - 1].y })
             shortData.push({ x: new Date(masterObject.short[masterObject.short.length - 1].x), y: masterObject.short[masterObject.short.length - 1].y })
 
@@ -205,6 +227,11 @@ $(function () {
             pdiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.adx[masterObject.adx.length - 1] === 0 ? 0 : masterObject.adx[masterObject.adx.length - 1].pdi })
             
             mdiData.push({ x: new Date(masterObject.time[masterObject.time.length - 1]), y: masterObject.adx[masterObject.adx.length - 1] === 0 ? 0 : masterObject.adx[masterObject.adx.length - 1].mdi })
+
+            dojiData.push({ x: new Date(masterObject.doji[masterObject.doji.length - 1].time), y: masterObject.doji[masterObject.doji.length - 1].close })
+            bullishData.push({ x: new Date(masterObject.bullish[masterObject.bullish.length - 1].time), y: masterObject.bullish[masterObject.bullish.length - 1].close })
+
+
             ohlcChartInstance.render();
             rsiChartInstance.render()
             fiChartInstance.render()
@@ -348,6 +375,32 @@ $(function () {
                         yValueFormatString: "",
                         xValueFormatString: "",
                         dataPoints: highData
+                    },
+                    {
+                        type: "line",
+                        lineThickness: 1,
+                        lineColor: "transparent",
+                        markerType: "circle",
+                        markerSize: 3,
+                        markerColor: "yellow",
+                        name: "Doji",
+                        axisYType: "primary",
+                        yValueFormatString: "",
+                        xValueFormatString: "",
+                        dataPoints: dojiData
+                    },
+                    {
+                        type: "line",
+                        lineThickness: 1,
+                        lineColor: "transparent",
+                        markerType: "circle",
+                        markerSize: 5,
+                        markerColor: "green",
+                        name: "Bullish",
+                        axisYType: "primary",
+                        yValueFormatString: "",
+                        xValueFormatString: "",
+                        dataPoints: bullishData
                     }
                 ]
             });
@@ -997,11 +1050,22 @@ $(function () {
                 lineThickness: 1,
                 //lineColor: "blue",
                 showInLegend: true,
-                name: "OBV",
+                name: "Trix",
                 axisYType: "primary",
                 yValueFormatString: "",
                 xValueFormatString: "MMM-DD hh:mm",
                 dataPoints: trixData
+            },
+            {
+                type: "column",
+                lineThickness: 1,
+                color: "rgb(9, 243, 152, 0.5)",
+                showInLegend: true,
+                name: "TrixGap",
+                axisYType: "primary",
+                yValueFormatString: "",
+                xValueFormatString: "MMM-DD hh:mm",
+                dataPoints: trixGapData
             }]
         });
         trixChartInstance.render();
@@ -1034,7 +1098,7 @@ $(function () {
     });
 
     socket.on('CHART_DATA', (masterObject) => {
-        console.log(masterObject.long, masterObject.short)
+        console.log(masterObject.trix)
         if (chartsLoaded === false) {
             mapData(masterObject)
             renderCharts()

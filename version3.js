@@ -25,7 +25,10 @@ const OBV = require('technicalindicators').OBV;
 const KST = require('technicalindicators').KST;
 const ADX = require('technicalindicators').ADX;
 const EMA = require('technicalindicators').EMA
-const TRIX = require('technicalindicators').TRIX; 
+const TRIX = require('technicalindicators').TRIX;
+const doji = require('technicalindicators').doji;
+var bullish = require('technicalindicators').bullish;
+
 
 // const as = async () => {
 //     const today = new Date();
@@ -37,7 +40,7 @@ const TRIX = require('technicalindicators').TRIX;
 //             yy: date.getFullYear().toString().slice(-2),
 //             yyyy: date.getFullYear()
 //         }
-    
+
 //         return format.replace(/mm|dd|yy|yyy/gi, matched => map[matched])
 //     }
 //     let end = formatDate(today, 'yyyy-mm-dd');
@@ -45,7 +48,7 @@ const TRIX = require('technicalindicators').TRIX;
 //     const history = await publicClient.getProductHistoricRates(
 //         'ETH-USD',
 //         { granularity: 3600, start: end},
-        
+
 //         // (res) => {
 //         //     console.log(res.body)
 //         // }
@@ -92,11 +95,13 @@ let masterDataObject = {
     kstGap: [],
     kstUpDown: [],
     kstSignalUpDown: [],
-    currentPosition: [{position: null, price: null, time: null }],
+    currentPosition: [{ position: null, price: null, time: null }],
     trix: [],
-    trixUpDown: []
+    trixUpDown: [],
+    doji: [],
+    bullish: [],
+    trixGap: []
 }
-
 
 app.use(express.static('version2'));
 app.get('/', function (req, res) {
@@ -113,7 +118,7 @@ io.on('connection', function (socket) {
     setInterval(() => {
         io.emit('CHART_DATA', masterDataObject);
     }, 60000);
-    
+
 });
 
 http.listen(port, function () {
@@ -135,8 +140,8 @@ const connectChart = (setupIndicatorsCallback) => {
     let hasCalcShortExecuted = false;
 
     const mapCachedData = (data) => {
-        
-        
+
+
         for (const key in data) {
             //console.log(`${key}: ${data[key]}`);
             masterDataObject.time.push(convertUnixToTimestamp(toNumber(key)));
@@ -241,7 +246,7 @@ const connectChart = (setupIndicatorsCallback) => {
         masterDataObject.rsi = SMA.calculate({ period: 21, values: masterDataObject.rsi }) // 21
         masterDataObject.secondRSI = RSI.calculate(secondRSI);
         masterDataObject.secondRSI = SMA.calculate({ period: 21, values: masterDataObject.secondRSI }) //21
-        
+
         offsetPeriod(40, masterDataObject.rsi) // 40
         offsetPeriod(24, masterDataObject.secondRSI) // 14
         //console.log(masterDataObject.rsi.length, masterDataObject.secondRSI.length)
@@ -270,65 +275,67 @@ const connectChart = (setupIndicatorsCallback) => {
         const overVWAPEntry = () => {
             for (let index = 0; index < masterDataObject.time.length; index++) {
                 if (masterDataObject.kstUpDown[index] === 'up' && (masterDataObject.kstUpDown[index - 1] === "down" || masterDataObject.kstUpDown[index - 1] === "flat")) {
-                    if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
+                    if (masterDataObject.vwap[index] < masterDataObject.low[index]) {
                         masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                        masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
                     } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
                         if (masterDataObject.kst[index] < -12) {
                             masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                            masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                            masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
 
                         }
                     }
-                    
+
                 }
-                if ( masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
                     if (masterDataObject.vwap[index] < masterDataObject.low[index]) {
                         if (masterDataObject.kstUpDown[index] === 'down' && masterDataObject.kstUpDown[index - 1] === "up") {
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                            masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
                         } else if (masterDataObject.kstSignalUpDown[index] === 'down' && masterDataObject.kstSignalUpDown[index - 1] === "up") {
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
-                        
+                            masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+
                         }
                     } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
                         if (masterDataObject.kstSignalUpDown[index] === 'down' && masterDataObject.kstSignalUpDown[index - 1] === "up") {
                             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                            masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
                         }
                     }
 
-                    
-                        
-                    
+
+
+
                     handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
                     //handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
-                    
+
                 }
-                
-                
-                
+
+
+
             }
         }
-        
+
         const handleExit = (lastPrice, lastPurchasePrice, time) => {
             //console.log(lastPrice, lastPurchasePrice.y + (lastPurchasePrice.y * 0.015))
             if (lastPrice > lastPurchasePrice.y + (lastPurchasePrice.y * 0.015)) {
                 masterDataObject.short.push({ x: new Date(time), y: lastPrice })
-                masterDataObject.currentPosition.push({position: 'short', price: lastPrice, time: time  })
+                masterDataObject.currentPosition.push({ position: 'short', price: lastPrice, time: time })
             }
         }
 
         const handleStopLoss = (lastPrice, lastPurchasePrice, time) => {
-            console.log(lastPrice, lastPurchasePrice.y - (lastPurchasePrice.y * 0.005))
+            //console.log(lastPrice, lastPurchasePrice.y - (lastPurchasePrice.y * 0.005))
             // if (masterDataObject.short[masterDataObject.short.length - 1].y) {
 
             // }
             if (lastPrice < lastPurchasePrice.y - lastPurchasePrice.y * 0.005) {
                 masterDataObject.short.push({ x: new Date(time), y: lastPrice })
-                masterDataObject.currentPosition.push({position: 'short', price: lastPrice, time: time })
+                masterDataObject.currentPosition.push({ position: 'short', price: lastPrice, time: time })
+                return true;
             }
+            return false;
         }
 
         const calKSTCrossover = () => {
@@ -350,7 +357,7 @@ const connectChart = (setupIndicatorsCallback) => {
         }
 
         const soundAlarm = () => {
-            console.log(masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1], masterDataObject.time[masterDataObject.time.length - 1])
+            // /console.log(masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1], masterDataObject.time[masterDataObject.time.length - 1])
             if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].time === masterDataObject.time[masterDataObject.time.length - 1]) {
                 if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
                     console.log('sound buy')
@@ -362,53 +369,148 @@ const connectChart = (setupIndicatorsCallback) => {
             }
         }
 
-        const trixStrategy = (tick) => {
+        const trixStrategy = () => {
             for (let index = 0; index < masterDataObject.time.length; index++) {
 
                 //console.log(new Date(masterDataObject.time[index]), masterDataObject.trixUpDown.length)
 
                 if (masterDataObject.trixUpDown[index - 1] === 'down' && (masterDataObject.trixUpDown[index] === "up" || masterDataObject.trixUpDown[index] === "flat")) {
                     // if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
-                        
+                        if (masterDataObject.currentPosition.length === 0) {
+                            masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        } else {
+                            
+                            //console.log(masterDataObject.currentPosition)
+                            if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "short") {
+                                masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                                masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                            }
+                        }
 
-                        masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                        masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
-                        
                     // } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
-                        // if (masterDataObject.kst[index] < -12) {
-                        //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                        //     masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                    // if (masterDataObject.kst[index] < -12) {
+                    //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                    //     masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
 
-                        // }
                     // }
-                    
+                    // }
+
                 }
                 if (masterDataObject.currentPosition.length > 0) {
-                    if ( masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
-                        if (masterDataObject.trixUpDown[index - 1] === "up" && (masterDataObject.trixUpDown[index] === 'flat' || masterDataObject.trixUpDown[index] === "down")) {
-                            //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
-                            masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                            masterDataObject.currentPosition.push({position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
-                            
-                        } 
+                    if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                        let stopLoss = handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index]);
+                        console.log(stopLoss)
+                        if (!stopLoss) {
+                            if (masterDataObject.trixUpDown[index - 1] === "up" && (masterDataObject.trixUpDown[index] === 'flat' || masterDataObject.trixUpDown[index] === "down")) {
+                                //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
+                                masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                                masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+    
+                            }
+                        }
+                        
                         //handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
-                        //handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                        
                     }
                 }
 
             }
         }
 
+        const trixGapStrategy = () => {
+            let trixGapUpDown = []
+            for (let index = 0; index < masterDataObject.time.length; index++) {
+                if (masterDataObject.trixGap[index] > masterDataObject.trixGap[index - 1]) {
+                    trixGapUpDown.push('up')
+                } else if (masterDataObject.trixGap[index] === masterDataObject.trixGap[index - 1]) {
+                    trixGapUpDown.push('flat')
+                } else if (masterDataObject.trixGap[index] < masterDataObject.trixGap[index - 1]) {
+                    trixGapUpDown.push('down')
+                }
+            }
+            offsetPeriod(1, trixGapUpDown)
+            //console.log(trixGapUpDown.length, masterDataObject.trixGap)
+            
+            for (let index = 0; index < masterDataObject.time.length; index++) {
+                
+                // if (trixGapUpDown[index - 1] === 'down' && (trixGapUpDown[index] === "up" || trixGapUpDown[index] === "flat")) {
+                //     if (masterDataObject.trixGap[index] < 0 && masterDataObject.kst[index] > masterDataObject.kstSignal[index]) {
+                //         masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                //         masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                //     }
+                   
+                // }
+                
+                if (masterDataObject.trixUpDown[index - 1] === 'down' && (masterDataObject.trixUpDown[index] === "up" || masterDataObject.trixUpDown[index] === "flat")) {
+                    // if (masterDataObject.vwap[index] < masterDataObject.low[index] ) {
+                    
+                    if (masterDataObject.currentPosition.length === 0) {
+                        masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                        masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                    } else {
+                        
+                        //console.log(masterDataObject.currentPosition)
+                        if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "short") {
+                            masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                            masterDataObject.currentPosition.push({ position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                        }
+                    }
+                    
+
+                    // } else if (masterDataObject.vwap[index] > masterDataObject.low[index]) {
+                    // if (masterDataObject.kst[index] < -12) {
+                    //     masterDataObject.long.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                    //     masterDataObject.currentPosition.push({position: 'long', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+
+                    // }
+                    // }
+
+                }
+                // if (masterDataObject.currentPosition.length > 0) {
+                //     if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                //         if (masterDataObject.trixUpDown[index - 1] === "up" && (masterDataObject.trixUpDown[index] === 'flat' || masterDataObject.trixUpDown[index] === "down")) {
+                //             //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
+                //             masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                //             masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+
+                //         }
+                //         //handleExit(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                //         //handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index])
+                //     }
+                //}
+                if (masterDataObject.currentPosition.length > 0) {
+                    if (masterDataObject.currentPosition[masterDataObject.currentPosition.length - 1].position === "long") {
+                        if (trixGapUpDown[index - 1] === "up" && (trixGapUpDown[index] === 'flat' || trixGapUpDown[index] === "down")) {
+                            let stopLoss = handleStopLoss(masterDataObject.close[index], masterDataObject.long[masterDataObject.long.length - 1], masterDataObject.time[index]);
+                            console.log(stopLoss)
+                            if (!stopLoss) {
+                                if (masterDataObject.trixGap[index] > 0.001) {
+                                    //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
+                                    masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                                    masterDataObject.currentPosition.push({ position: 'short', price: masterDataObject.close[index], time: new Date(masterDataObject.time[index]) })
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            //console.log(trixGapUpDown)
+        }
+
         return {
-            trixStrategy: (tick) => {
+            trixStrategy: () => {
                 trixStrategy()
                 soundAlarm()
+            },
+            trixGapStrategy: () => {
+                trixGapStrategy()
             }
         }
     }
     const calcShort = () => {
-        
-        if ( masterDataObject.long.length > 0 && hasCalcShortExecuted === false ) {
+
+        if (masterDataObject.long.length > 0 && hasCalcShortExecuted === false) {
             for (let index = 0; index < masterDataObject.time.length; index++) {
                 // Calc KST CrossOver
                 if (masterDataObject.secondRSI[index] < masterDataObject.mfi[index]) {
@@ -422,8 +524,8 @@ const connectChart = (setupIndicatorsCallback) => {
                 if (masterDataObject.rsiCrossOver[index] === false && masterDataObject.rsiCrossOver[index - 1] === true) {
                     // console.log(masterDataObject.long.length,  masterDataObject.short.length)
                     // if (masterDataObject.long.length >= masterDataObject.short.length) {
-                        //masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
-                        //masterDataObject.long = []; 
+                    //masterDataObject.short.push({ x: new Date(masterDataObject.time[index]), y: masterDataObject.close[index] })
+                    //masterDataObject.long = []; 
                     //}
                 }
             }
@@ -505,14 +607,14 @@ const connectChart = (setupIndicatorsCallback) => {
             SMAROCPer2: 10,
             SMAROCPer3: 10,
             SMAROCPer4: 15,
-            signalPeriod: 35 // 3, 8
+            signalPeriod: 11 // 3, 8
         };
 
         function getRandomIntInclusive(min, max) {
             min = Math.ceil(min);
             max = Math.floor(max);
             return Math.floor(Math.random() * (max - min + 1) + min); //The maximum is inclusive and the minimum is inclusive
-          }
+        }
 
         let res = KST.calculate(input);
         //console.log(res)
@@ -521,10 +623,10 @@ const connectChart = (setupIndicatorsCallback) => {
         for (let index = 0; index < res.length; index++) {
             //console.log(res[index].signal)
             masterDataObject.kst.push(res[index].kst)
-            masterDataObject.kstSignal.push( res[index].signal)
+            masterDataObject.kstSignal.push(res[index].signal)
         }
         masterDataObject.kstSignal = _.compact(masterDataObject.kstSignal);
-        masterDataObject.kst = SMA.calculate({period: 21, values: masterDataObject.kst}) // 9
+        //masterDataObject.kst = SMA.calculate({period: 21, values: masterDataObject.kst}) // 9
         // masterDataObject.kstSignal = SMA.calculate({period: 9, values: masterDataObject.kstSignal}) // 9
         // for (let index = 0; index < 10; index++) {
         //     // masterDataObject.kst.push(Math.random(getRandomIntInclusive(masterDataObject.kst[masterDataObject.kst.length - 1], masterDataObject.kst[masterDataObject.kst.length - 1] + 0.55)))
@@ -538,12 +640,12 @@ const connectChart = (setupIndicatorsCallback) => {
         //     } {
         //         masterDataObject.kstGap.push(false)
         //     }
-            
-            
+
+
         // }
         //console.log(masterDataObject.kstGap)
-        offsetPeriod(63, masterDataObject.kst);
-        offsetPeriod(77, masterDataObject.kstSignal);
+        offsetPeriod(43, masterDataObject.kst);
+        offsetPeriod(53, masterDataObject.kstSignal);
 
         masterDataObject.kstUpDown = []
         masterDataObject.kstSignalUpDown = []
@@ -562,12 +664,12 @@ const connectChart = (setupIndicatorsCallback) => {
             } else if (masterDataObject.kstSignal[index] < masterDataObject.kstSignal[index - 1]) {
                 masterDataObject.kstSignalUpDown.push("down")
             }
-            
+
         }
         offsetPeriod(0, masterDataObject.kstUpDown);
-        //console.log(masterDataObject.kstUpDown, masterDataObject.kstUpDown.length)
-        
-        //console.log( masterDataObject.kst.length, masterDataObject.kstSignal.length)
+        //console.log(masterDataObject.kst.length, masterDataObject.kstSignal.length, masterDataObject.kstUpDown.length)
+
+        //console.log(masterDataObject.kst.length, masterDataObject.kstSignal.length)
 
     }
 
@@ -577,7 +679,7 @@ const connectChart = (setupIndicatorsCallback) => {
             high: masterDataObject.high,
             low: masterDataObject.low,
             period: 31
-          }
+        }
 
         masterDataObject.adx = ADX.calculate(input);
         offsetPeriod(60, masterDataObject.adx)
@@ -600,32 +702,32 @@ const connectChart = (setupIndicatorsCallback) => {
             } else {
                 masterDataObject.rsiCrossOver.push(true)
             }
-        } 
-            
+        }
+
         //if (masterDataObject.liveOpenLongs.length === 0) {
-            if (masterDataObject.kstCrossOver[masterDataObject.kstCrossOver.length - 1] === true && ( masterDataObject.kstCrossOver[masterDataObject.kstCrossOver - 2] === false && masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 1] === true)) {
-                if (masterDataObject.kst[masterDataObject.kst.length - 1] < -8) {
-                    masterDataObject.liveOpenLongs.push({ x: new Date(masterDataObject.time[masterDataObject.time.length - 1]), y: masterDataObject.close[masterDataObject.close.length - 1] })
-                }
-                console.log(masterDataObject.liveOpenLongs)
+        if (masterDataObject.kstCrossOver[masterDataObject.kstCrossOver.length - 1] === true && (masterDataObject.kstCrossOver[masterDataObject.kstCrossOver - 2] === false && masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 1] === true)) {
+            if (masterDataObject.kst[masterDataObject.kst.length - 1] < -8) {
+                masterDataObject.liveOpenLongs.push({ x: new Date(masterDataObject.time[masterDataObject.time.length - 1]), y: masterDataObject.close[masterDataObject.close.length - 1] })
             }
+            console.log(masterDataObject.liveOpenLongs)
+        }
         //} else {
-            if (masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 1] === false && masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 2] === true) {
-                masterDataObject.liveOpenShorts.push({ x: new Date(masterDataObject.time[masterDataObject.time.length - 1]), y: masterDataObject.close[masterDataObject.close.length - 1] })
-            }
+        if (masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 1] === false && masterDataObject.rsiCrossOver[masterDataObject.rsiCrossOver.length - 2] === true) {
+            masterDataObject.liveOpenShorts.push({ x: new Date(masterDataObject.time[masterDataObject.time.length - 1]), y: masterDataObject.close[masterDataObject.close.length - 1] })
+        }
         //}
     }
 
     const calcEMA = (period, values) => {
-        EMA.calculate({period : period, values : values})  
+        EMA.calculate({ period: period, values: values })
     }
 
     const calcTRIX = () => {
         var close = masterDataObject.close;
 
         let input = {
-        values      : close,
-        period      : 18
+            values: masterDataObject.close,
+            period: 18
         };
 
         masterDataObject.trix = TRIX.calculate(input);
@@ -642,34 +744,86 @@ const connectChart = (setupIndicatorsCallback) => {
             }
         }
         offsetPeriod(0, masterDataObject.trixUpDown)
-        console.log(masterDataObject.trix.length, masterDataObject.trixUpDown.length)
+        //console.log(masterDataObject.trix.length, masterDataObject.trixUpDown.length)
     }
 
     const calcProfit = () => {
+        console.log(masterDataObject.long.length, masterDataObject.short.length, masterDataObject.currentPosition)
         let longSum = 0;
         let shortSum = 0;
         for (let index = 0; index < masterDataObject.long.length; index++) {
             // console.log(index, masterDataObject.short[index])
-            if (typeof masterDataObject.short[index] !== 'undefined') {
-                longSum = (masterDataObject.short[index].y - masterDataObject.long[index].y) + longSum 
-
-            }
+            //if (typeof masterDataObject.short[index] !== 'undefined') {
+                longSum = masterDataObject.long[index].y + longSum
+                //console.log(masterDataObject.short[index].y - masterDataObject.long[index].y)
+            //}
         }
         for (let index = 0; index < masterDataObject.short.length; index++) {
-            shortSum = masterDataObject.short[index].y + shortSum 
+            shortSum = masterDataObject.short[index].y + shortSum
         }
 
-        let gross = longSum;
+        console.log(longSum, shortSum)
+
+
+        let gross = shortSum - longSum;
         let totalTradeAmount = shortSum + longSum;
         let fees = totalTradeAmount * 0.00075;
         let net = gross - fees;
         let shortProfit = (longSum - shortSum) * -1;
 
 
-        console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)) )
+        console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
 
-        io.emit('PROFIT_LOG', {gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2))});
-        
+        io.emit('PROFIT_LOG', { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
+
+    }
+
+    const calcDoji = () => {
+
+        for (let index = 0; index < masterDataObject.time.length; index++) {
+            let singleInput = {
+                open: [masterDataObject.open[index]],
+                high: [masterDataObject.high[index]],
+                close: [masterDataObject.close[index]],
+                low: [masterDataObject.low[index]],
+            }
+            var result = doji(singleInput);
+            //console.log('Is Doji Pattern? :' + result, masterDataObject.time[index]);
+            if (result) {
+                masterDataObject.doji.push({close: masterDataObject.close[index], time: masterDataObject.time[index]})
+
+            }
+        }
+    }
+
+    const calcBullish = () => {
+        var threewhitesoldiers =require('technicalindicators').threewhitesoldiers;
+        for (let index = 5; index < masterDataObject.time.length; index++) {
+            const twoDayBullishInput = {
+                open: [masterDataObject.open[index - 4], masterDataObject.open[index - 3], masterDataObject.open[index - 2], masterDataObject.open[index - 1], masterDataObject.open[index]],
+                high: [masterDataObject.high[index - 4], masterDataObject.high[index - 3], masterDataObject.high[index - 2], masterDataObject.high[index - 1], masterDataObject.high[index]],
+                close: [masterDataObject.close[index - 4], masterDataObject.close[index - 3], masterDataObject.close[index - 2], masterDataObject.close[index - 1], masterDataObject.close[index]],
+                low: [masterDataObject.low[index - 4], masterDataObject.low[index - 3], masterDataObject.low[index - 2], masterDataObject.low[index - 1], masterDataObject.low[index]],
+            }
+            //console.log(threewhitesoldiers(twoDayBullishInput), masterDataObject.time[index])
+            if (threewhitesoldiers(twoDayBullishInput)) {
+                masterDataObject.bullish.push({time: masterDataObject.time[index], close:  masterDataObject.close[index] - 10})
+            }
+        }        
+    }
+
+    const calcTrixGap = () => {
+        for (let index = 1; index < masterDataObject.trix.length; index++) {
+            //console.log(masterDataObject.trix[index], masterDataObject.trix[index - 1], masterDataObject.trix[index]- masterDataObject.trix[index - 1])
+            let gap = masterDataObject.trix[index] - masterDataObject.trix[index - 1];
+            if (gap < 0 ) {
+                masterDataObject.trixGap.push(gap)
+            } else {
+                masterDataObject.trixGap.push(gap)
+            }
+        }
+        offsetPeriod(0, masterDataObject.trixGap)
+        console.log(masterDataObject.trixGap.length)
     }
 
     binance.websockets.chart(pair, timeframe, (symbol, interval, chart) => {
@@ -688,18 +842,22 @@ const connectChart = (setupIndicatorsCallback) => {
             calcMFI()
             calcFi()
             calcRSI()
-            calcVWAP()        
+            calcVWAP()
             calcMoneyFlowStretch()
             calcOBV()
             calcKst()
             calcADX()
             //calcEMA()
             calcTRIX()
+            calcDoji()
+            calcBullish()
+            calcTrixGap()
 
             // Entry runs last
             calcEntry().trixStrategy()
             //calcShort()
             calcProfit()
+
 
             //handleLiveSpotTrading()
             setInterval(() => {
@@ -707,7 +865,7 @@ const connectChart = (setupIndicatorsCallback) => {
                 calcMFI()
                 calcFi()
                 calcRSI()
-                calcVWAP()        
+                calcVWAP()
                 calcMoneyFlowStretch()
                 calcOBV()
                 calcKst()
@@ -723,9 +881,9 @@ const connectChart = (setupIndicatorsCallback) => {
                     //handleLiveSpotTrading()
                 }
                 calcProfit()
-                
+
             }, 2000);
-            
+
 
             hasExecuted = true;
         }
@@ -733,7 +891,7 @@ const connectChart = (setupIndicatorsCallback) => {
         handleCurrentAndFinalTick(chart[tick], tick)
         //console.log(close[close.length - 2], open[open.length - 2])
         //console.log(close[close.length - 1], open[open.length - 1])
-        
+
         //console.log(masterDataObject.short, masterDataObject.long)
     });
 }
