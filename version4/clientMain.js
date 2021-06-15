@@ -42,7 +42,7 @@ $(function () {
         exportEnabled: true,
         zoomEnabled: true,
         title: {
-            text: "ETHUSDT 1m Chart"
+            text: "ETHUSDT 5m Chart"
         },
         subtitles: [{
             text: "Binance Exchange - Spot Trading"
@@ -193,6 +193,16 @@ $(function () {
             xValueFormatString: "MMM-DD hh:mm",
             xValueType: "dateTime",
             dataPoints: data.trix
+        },{
+            type: "column",
+            lineThickness: 1,
+            showInLegend: true,
+            name: "Gap",
+            axisYType: "primary",
+            yValueFormatString: "",
+            xValueFormatString: "MMM-DD hh:mm",
+            xValueType: "dateTime",
+            dataPoints: data.trixGap
         }])
         trixChart.render()
 
@@ -242,7 +252,7 @@ $(function () {
         exportEnabled: true,
         zoomEnabled: true,
         title: {
-            text: "ETHUSDT 5m Chart"
+            text: "ETHUSDT 1h Chart"
         },
         subtitles: [{
             text: "Binance Exchange - Spot Trading"
@@ -366,7 +376,7 @@ $(function () {
             axisYType: "primary",
             yValueFormatString: "",
             xValueFormatString: "",
-            dataPoints: data.long
+            dataPoints: data.oneHourLong
         },
         {
             type: "line",
@@ -379,7 +389,7 @@ $(function () {
             axisYType: "primary",
             yValueFormatString: "",
             xValueFormatString: "",
-            dataPoints: data.short
+            dataPoints: data.oneHourShort
         }])
         secondChart.render()
 
@@ -393,6 +403,16 @@ $(function () {
             xValueFormatString: "MMM-DD hh:mm",
             xValueType: "dateTime",
             dataPoints: data.trix
+        },{
+            type: "column",
+            lineThickness: 1,
+            showInLegend: true,
+            name: "Gap",
+            axisYType: "primary",
+            yValueFormatString: "",
+            xValueFormatString: "MMM-DD hh:mm",
+            xValueType: "dateTime",
+            dataPoints: data.trixGap
         }])
         secondTrixChart.render()
 
