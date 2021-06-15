@@ -376,7 +376,7 @@ $(function () {
             axisYType: "primary",
             yValueFormatString: "",
             xValueFormatString: "",
-            dataPoints: data.oneHourLong
+            dataPoints: data.long
         },
         {
             type: "line",
@@ -389,7 +389,7 @@ $(function () {
             axisYType: "primary",
             yValueFormatString: "",
             xValueFormatString: "",
-            dataPoints: data.oneHourShort
+            dataPoints: data.short
         }])
         secondChart.render()
 
