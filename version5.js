@@ -4,14 +4,13 @@ const axios = require('axios');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 const _ = require('lodash');
-var port = process.env.PORT || 3000;
+var port = process.env.PORT || 4000;
 let config = '';
-if (port === 3000) {
+if (port === 4000) {
     config = require('./config.json');
 }
 const Binance = require('node-binance-api');
 const TRIX = require('technicalindicators').TRIX;
-const { toNumber } = require('lodash');
 
 const binance = new Binance().options({
     APIKEY: process.env.bkey ? process.env.bkey : config.BINANCE_APIKEY,
@@ -81,8 +80,7 @@ function Chart(symbol, tf) {
         oneHourLong: [],
         oneHourShort: [],
         oneHourCurrent: [],
-        streamBid: [],
-        streamAsk: []
+        stream: []
     }
 
     const convertUnixToTimestamp = (unix) => {
@@ -175,7 +173,7 @@ function Chart(symbol, tf) {
     }
 
     const handleStopLoss = (lastPrice, lastPurchasePrice, time) => {
-        if (lastPrice < lastPurchasePrice.y - lastPurchasePrice.y * 0.01) {
+        if (lastPrice < lastPurchasePrice.y - lastPurchasePrice.y * 0.005) {
             data.short.push({ x: time, y: lastPrice })
             data.currentPosition.push({ position: 'short', price: lastPrice, time: time })
             marketSell()
@@ -438,17 +436,13 @@ function Chart(symbol, tf) {
     const connectStream = () => {
         binance.websockets.bookTickers( 'ETHUSDT', (res) => {
             //console.log(res)
-            if (data.streamBid.length < 100) {
-                data.streamBid.push({ x: Date.now(), y: _.toNumber(res.bestBid) })
-                data.streamAsk.push({ x: Date.now(), y: _.toNumber(res.bestAsk) })
+            if (data.stream.length < 500) {
+                data.stream.push(res)
             } else {
-                data.streamBid.unshift()
-                data.streamAsk.unshift()
-                data.streamBid.push({ x: Date.now(), y: _.toNumber(res.bestBid) })
-                data.streamAsk.push({ x: Date.now(), y: _.toNumber(res.bestAsk) })
+                data.stream.pop()
+                data.stream.push(res)
             }
-            io.emit('STREAM', data);
-            //console.log(data.stream[0])
+            console.log(data.stream[0])
         } ); 
     }
 
@@ -479,22 +473,11 @@ http.listen(port, function () {
     console.log('listening on V2 *:' + port);
 });
 
-const oneMinuteChart = new Chart('ETHUSDT', '5m')
-oneMinuteChart.connect()
-const fiveMinuteChart = new Chart('ETHUSDT', '1h')
-fiveMinuteChart.connect()
-// const streamChart = new Chart()
-// streamChart.connectStream('ETHUSDT', 'stream')
-
-// const getHistoricalData = () => {
-//     axios({
-//         method: 'get',
-//         url: 'https://min-api.cryptocompare.com/data/v2/histominute?fsym=ETH&tsym=USD&aggregate=5&limit=2000&api_key=7120dce2a54f4c55f45f62789ed7e61ae456d70c956156e01555ca6c3e4b2148',
-//     })
-//     .then(function (res) {
-//         console.log(res.data.Data[1])
-//     });
-// }
-// getHistoricalData()
+//const oneMinuteChart = new Chart('ETHUSDT', '5m')
+// oneMinuteChart.connect()
+// const fiveMinuteChart = new Chart('ETHUSDT', '1h')
+// fiveMinuteChart.connect()
+const streamChart = new Chart()
+streamChart.connectStream()
 
 

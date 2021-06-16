@@ -1,38 +1,43 @@
 var socket = io();
+CanvasJS.addColorSet("greenShades",
+[
+    "#2F4F4F",
+    "#008080",
+    "#2E8B57",
+    "#3CB371",
+    "#90EE90",
+    "#4661EE",
+    "#EC5657"
+]);
+CanvasJS.addColorSet("kstColorSet",
+[
+    "rgba(0,75,141,0.7)",
+    "rgba(40,175,101,0.6)",
+]);
+CanvasJS.addColorSet("candyShades",
+[
+    "#FD49A0",
+    "#A16AE8",
+    "#B4FEE7",
+    "#603F8B",
+]
+);
+CanvasJS.addColorSet("seaShades",
+[
+    "#4E4F50",
+    "#4E4F50",
+    "#E2DED0",
+    "#647C90",
+]
+);
 
 $(function () {
-
-    CanvasJS.addColorSet("greenShades",
-        [
-            "#2F4F4F",
-            "#008080",
-            "#2E8B57",
-            "#3CB371",
-            "#90EE90",
-            "#4661EE",
-            "#EC5657"
-        ]);
-    CanvasJS.addColorSet("kstColorSet",
-        [
-            "rgba(0,75,141,0.7)",
-            "rgba(40,175,101,0.6)",
-        ]);
-    CanvasJS.addColorSet("candyShades",
-        [
-            "#FD49A0",
-            "#A16AE8",
-            "#B4FEE7",
-            "#603F8B",
-        ]
-    );
-    CanvasJS.addColorSet("seaShades",
-        [
-            "#4E4F50",
-            "#4E4F50",
-            "#E2DED0",
-            "#647C90",
-        ]
-    );
+    $('form').submit(function(){
+        socket.emit('botLog', $('#m').val());
+        console.log($('#m').val())
+        $('#m').val('');
+        return false;
+    });
 
     let mainChart = new CanvasJS.Chart("mainChartContainer", {
         //animationEnabled: true,
@@ -142,7 +147,7 @@ $(function () {
     });
 
     socket.on('ETHUSDT-5m', (data) => {
-        console.log(data)
+        //console.log(data)
         
         mainChart.set("data", [{
             type: "line",
@@ -211,38 +216,6 @@ $(function () {
 });
 
 $(function () {
-
-    CanvasJS.addColorSet("greenShades",
-        [
-            "#2F4F4F",
-            "#008080",
-            "#2E8B57",
-            "#3CB371",
-            "#90EE90",
-            "#4661EE",
-            "#EC5657"
-        ]);
-    CanvasJS.addColorSet("kstColorSet",
-        [
-            "rgba(0,75,141,0.7)",
-            "rgba(40,175,101,0.6)",
-        ]);
-    CanvasJS.addColorSet("candyShades",
-        [
-            "#FD49A0",
-            "#A16AE8",
-            "#B4FEE7",
-            "#603F8B",
-        ]
-    );
-    CanvasJS.addColorSet("seaShades",
-        [
-            "#4E4F50",
-            "#4E4F50",
-            "#E2DED0",
-            "#647C90",
-        ]
-    );
 
     let secondChart = new CanvasJS.Chart("secondChartContainer", {
         //animationEnabled: true,
@@ -352,7 +325,7 @@ $(function () {
     });
 
     socket.on('ETHUSDT-1h', (data) => {
-        console.log(data)
+        //console.log(data)
         
         secondChart.set("data", [{
             type: "line",
@@ -415,6 +388,88 @@ $(function () {
             dataPoints: data.trixGap
         }])
         secondTrixChart.render()
+
+    });
+
+});
+
+$(function () {
+    
+    let streamChart = new CanvasJS.Chart("streamChartContainer", {
+        //animationEnabled: true,
+        //theme: "light", // "light1", "light2", "dark1", "dark2"
+        backgroundColor: "transparent",
+        colorSet: "greenShades",
+        exportEnabled: true,
+        zoomEnabled: true,
+        title: {
+            text: "ETHUSDT 1h Chart"
+        },
+        subtitles: [{
+            text: "Binance Exchange - Spot Trading"
+        }],
+        axisX: {
+            valueFormatString: "MMM-DD hh:mm",
+            // gridColor: "rgb(47, 243, 224, 0.3)",
+            lineThickness: 0,
+            //lineColor: "green"
+            labelFontColor: "rgb(81, 81, 81, 1)",
+            gridThickness: 0
+        },
+        axisY: {
+            prefix: "$",
+            //gridColor: "rgb(81, 81, 81, 0.3)",
+            lineThickness: 0,
+            labelPlacement:"inside",
+            labelFontColor: "rgb(81, 81, 81, 1)",
+            gridThickness: 0
+            //valueFormatString: "##",
+            //lineColor: "green"
+        },
+        toolTip: {
+            shared: true
+        },
+        legend: {
+            reversed: true,
+            cursor: "pointer",
+            itemclick: (e) => {
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                e.chart.render();
+            }
+        },
+        data: []
+    });
+
+    socket.on('STREAM', (data) => {
+        //console.log('ran',data)
+        
+        streamChart.set("data", [{
+            type: "line",
+            lineThickness: 1,
+            xValueType: "dateTime",
+            xValueFormatString: "MMM-DD hh:mm",
+            showInLegend: true,
+            name: "Bid",
+            axisYType: "primary",
+            yValueFormatString: "",
+            dataPoints: data.streamBid
+        },
+        {
+            type: "line",
+            lineThickness: 1,
+            xValueType: "dateTime",
+            xValueFormatString: "MMM-DD hh:mm",
+            showInLegend: true,
+            name: "Ask",
+            axisYType: "primary",
+            yValueFormatString: "",
+            dataPoints: data.streamAsk
+        }])
+        streamChart.render()
 
     });
 
