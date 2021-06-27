@@ -35,7 +35,7 @@ module.exports = {
   },
   engage: false,
   outputCommand: (io, command) => {
-    const helpers = require('./helpers/helpers.js');
+    const helpers = require('../helpers/helpers.js');
 
     if (command === 'manual sell') {
       module.exports.orderTrend99 = [];
