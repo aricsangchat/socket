@@ -7,7 +7,7 @@ const _ = require('lodash');
 var port = process.env.PORT || 3000;
 let config = '';
 if (port === 3000) {
-    config = require('./config.json');
+    config = require('../config.json');
 }
 const sound = require("sound-play");
 const path = require("path");
