@@ -248,29 +248,26 @@ function Chart(symbol, tf) {
                         if (data.currentPosition.length === 0) {
                             data.long.push(data.close[index])
                             data.currentPosition.push({ position: 'long', details: data.close[index] })
-                            marketBuy()
                         } else {
                             if (data.currentPosition[data.currentPosition.length - 1].position === "short") {
                                 data.long.push(data.close[index])
                                 data.currentPosition.push({ position: 'long', details: data.close[index] })
-                                marketBuy()
                             }
                         }
                     }
                 }
                 if (data.currentPosition.length > 0) {
                     if (data.currentPosition[data.currentPosition.length - 1].position === "long") {
-                        let stopLoss = handleStopLoss(data.close[index].y, data.long[data.long.length - 1], data.time[index]);
+                        //let stopLoss = handleStopLoss(data.close[index].y, data.long[data.long.length - 1], data.time[index]);
 
-                        if (!stopLoss) {
+                        //if (!stopLoss) {
                             if (data.trixUpDown[index - 1].y === "up" && (data.trixUpDown[index].y === 'flat' || data.trixUpDown[index].y === "down")) {
                                 //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
                                 data.short.push(data.close[index])
                                 data.currentPosition.push({ position: 'short', details: data.close[index] })
-                                marketSell()
 
                             }
-                        }
+                        //}
 
                     }
                 }
