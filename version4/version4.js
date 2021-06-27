@@ -21,24 +21,17 @@ const binance = new Binance().options({
 });
 
 let globalData = []
-let engage = false;
 
 io.on('botLog', function(msg){
     console.log(msg)
-    if (msg === 'start') {
-        engage = true;
-    }
 });
-// setTimeout(() => {
-//     engage = true;
-// }, 60000);
 
 function Chart(symbol, tf) {
 
     const pair = symbol;
     const timeframe = tf;
     let hasCachedDataExecuted = false;
-    let isFinal = engage;
+    let isFinal = false;
     let skipFirstTick = false;
 
     let data = {
@@ -199,48 +192,6 @@ function Chart(symbol, tf) {
         data.short = []
         data.currentPosition = [];
 
-        // for (let index = 0; index < data.time.length; index++) {
-        //     if (data.trixGapUpDown[index].y !==  null && data.trixGapUpDown[index - 1].y !== null) {
-        //         if (data.trixGapUpDown[index].y === 'up' && data.trixGapUpDown[index - 1].y === 'down') {
-        //             if (data.trixGap[index].y < -0.0003 && data.trixGap[index].y > -0.0006) {
-
-        //                 if (data.currentPosition.length === 0) {
-        //                     data.long.push(data.close[index])
-        //                     data.currentPosition.push({ position: 'long', details: data.close[index] })
-        //                 } else {
-        //                     if (data.currentPosition[data.currentPosition.length - 1].position === "short") {
-        //                         data.long.push(data.close[index])
-        //                         data.currentPosition.push({ position: 'long', details: data.close[index] })
-        //                     }
-        //                 }
-        //             }
-
-        //         }
-
-        //         if (data.currentPosition.length > 0) {
-        //             if (data.currentPosition[data.currentPosition.length - 1].position === "long") {
-        //                 // let stopLoss = handleStopLoss(data.close[index].y, data.long[data.long.length - 1], data.time[index]);
-        //                 if (data.close[index].y > data.long[data.long.length - 1].y + ( data.long[data.long.length - 1].y * 0.015)) {
-        //                     data.short.push(data.close[index])
-        //                     data.currentPosition.push({ position: 'short', details: data.close[index] })
-        //                 }
-
-        //                 // if (!stopLoss) {
-        //                 //     if (data.trixUpDown[index - 1].y === 'up' && data.trixUpDown[index].y === 'down') {
-        //                 //         //if (data.trixGap[index].y > 0.0 && data.trixGap[index].y < 0.02) {
-        //                 //             data.short.push(data.close[index])
-        //                 //             data.currentPosition.push({ position: 'short', details: data.close[index] })
-        //                 //         //}
-        //                 //     }
-        //                 // }
-
-        //             }
-        //         }
-
-
-        //     }
-        // }
-
         for (let index = 0; index < data.time.length; index++) {
             if (data.trixUpDown[index] !== null && data.trixUpDown[index - 1] !== null) {
                 if (data.trixUpDown[index - 1].y === 'down' && (data.trixUpDown[index].y === "up" || data.trixUpDown[index].y === "flat")) {
@@ -292,7 +243,7 @@ function Chart(symbol, tf) {
         let fees = totalTradeAmount * 0.00075;
         let net = gross - fees;
 
-        console.log('Engage: ', engage, 'Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
+        console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
 
         io.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
 
@@ -480,18 +431,6 @@ const oneMinuteChart = new Chart('ETHUSDT', '5m')
 oneMinuteChart.connect()
 const fiveMinuteChart = new Chart('ETHUSDT', '1h')
 fiveMinuteChart.connect()
-// const streamChart = new Chart()
-// streamChart.connectStream('ETHUSDT', 'stream')
 
-// const getHistoricalData = () => {
-//     axios({
-//         method: 'get',
-//         url: 'https://min-api.cryptocompare.com/data/v2/histominute?fsym=ETH&tsym=USD&aggregate=5&limit=2000&api_key=7120dce2a54f4c55f45f62789ed7e61ae456d70c956156e01555ca6c3e4b2148',
-//     })
-//     .then(function (res) {
-//         console.log(res.data.Data[1])
-//     });
-// }
-// getHistoricalData()
 
 
