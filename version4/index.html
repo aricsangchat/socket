@@ -15,15 +15,26 @@
     <div class='container-fluid'>
       <div class='row'>
         <div class='col-12'>
-          <header>
-            <p>PNL: 1ETH Longs Only </p>
-            <p>Gross:&nbsp;<span id="gross"></span></p>
-            <p>0.075% Fees:&nbsp;<span id="fees"></span></p>
-            <p>Net:&nbsp;<span id="net"></span></p>
-          </header>
-          <div id="mainChartContainer" style="height: 400px; width: 100%;"></div>
-          <div id="mainTrixChart" style="height: 400px; width: 100%;"></div>
-          <header>
+          <div class="mainLayoutContainer">
+            <header>
+              <p>PNL: 1ETH Longs Only </p>
+              <p>Gross:&nbsp;<span id="gross"></span></p>
+              <p>0.075% Fees:&nbsp;<span id="fees"></span></p>
+              <p>Net:&nbsp;<span id="net"></span></p>
+            </header>
+            <div class="chartWrapper">
+              <div id="mainChartContainer" class="chart" ></div>
+              <!-- <div id="mainTrixChart" style="height: 400px; width: 100%;"></div> -->
+              <div id="mainMACDChart" class="chart" ></div>
+            </div>
+            <div class="buttons">
+              <button class="btnStart"><span>start</span></button>
+              <button class="btnLaunch"><span>launch</span></button>
+            </div>
+          </div>
+          
+          
+          <!-- <header>
             <p>PNL: 1ETH Longs Only </p>
             <p>Gross:&nbsp;<span id="secondGross"></span></p>
             <p>0.075% Fees:&nbsp;<span id="secondFees"></span></p>
@@ -32,31 +43,21 @@
           <div id="secondChartContainer" style="height: 400px; width: 100%;"></div>
           <div id="secondTrixChart" style="height: 400px; width: 100%;"></div>
           <div id="streamChartContainer" style="height: 400px; width: 100%;"></div>
-          <div id="asdf" style="height: 400px; width: 100%;"></div>
+          <div id="asdf" style="height: 400px; width: 100%;"></div> -->
 
 
-        </div>
-      </div>
-      <div class='row'>
-        
-        <div class='col-6'>
-          
-        </div>
-        <div class='col-6'>
-          
-          
         </div>
       </div>
     </div>
-    <div class='container-fluid'>
+    <!-- <div class='container-fluid'>
       <div class='row'>
-        <div class='col-12'>
-          <form action="">
+        <div class='col-12'> -->
+          <!-- <form action="">
             <input id="m" placeholder="commands go here!"autocomplete="off" /><button>Send</button>
-          </form>        
-        </div>
-      </div>
-    </div>
+          </form>         -->
+          
+      <!-- </div>
+    </div> -->
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.stock.min.js"></script>

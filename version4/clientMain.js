@@ -139,14 +139,65 @@ $(function () {
         data: []
     });
 
-    socket.on('ETHUSDT-5m-profit-log', function(profit){
+    let macdChart = new CanvasJS.Chart("mainMACDChart", {
+        //animationEnabled: true,
+        // theme: "dark2", // "light1", "light2", "dark1", "dark2"
+        backgroundColor: "transparent",
+        colorSet: "candyShades",
+        dataPointMinWidth: 1,
+        exportEnabled: true,
+        zoomEnabled: true,
+        // dataPointWidth: 2,
+        title: {
+            text: "MACD Chart"
+        },
+        subtitles: [{
+            text: ""
+        }],
+        axisX: {
+            valueFormatString: "MMM-DD hh:mm",
+            //lineThickness: 1,
+            lineThickness: 0,
+            gridColor: "rgb(81, 81, 81, 1)",
+            labelFontColor: "rgb(81, 81, 81, 1)",
+
+        },
+        axisY: {
+            prefix: "",
+            title: "",
+            //lineThickness: 1,
+            gridColor: "rgb(81, 81, 81, 0.2)",
+            lineThickness: 0,
+            labelPlacement:"inside",
+            labelFontColor: "rgb(81, 81, 81, 1)",
+        },
+        toolTip: {
+            shared: true
+        },
+        legend: {
+            reversed: true,
+            cursor: "pointer",
+            itemclick: (e) => {
+                console.log(e)
+                if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                    e.dataSeries.visible = false;
+                } else {
+                    e.dataSeries.visible = true;
+                }
+                e.chart.render();
+            }
+        },
+        data: []
+    });
+
+    socket.on('ETHUSDT-1m-profit-log', function(profit){
         $("#gross").html(profit.gross);
         $("#fees").html(profit.fees);
         $("#net").html(profit.net);
 
     });
 
-    socket.on('ETHUSDT-5m', (data) => {
+    socket.on('ETHUSDT-1m', (data) => {
         //console.log(data)
         
         mainChart.set("data", [{
@@ -210,6 +261,29 @@ $(function () {
             dataPoints: data.trixGap
         }])
         trixChart.render()
+
+        macdChart.set("data", [{
+            type: "line",
+            lineThickness: 1,
+            showInLegend: true,
+            name: "MACD",
+            axisYType: "primary",
+            yValueFormatString: "",
+            xValueFormatString: "MMM-DD hh:mm",
+            xValueType: "dateTime",
+            dataPoints: data.macd
+        },{
+            type: "line",
+            lineThickness: 1,
+            showInLegend: true,
+            name: "Signal",
+            axisYType: "primary",
+            yValueFormatString: "",
+            xValueFormatString: "MMM-DD hh:mm",
+            xValueType: "dateTime",
+            dataPoints: data.macdSignal
+        }])
+        macdChart.render()
 
     });
 
@@ -317,14 +391,14 @@ $(function () {
         data: []
     });
 
-    socket.on('ETHUSDT-1h-profit-log', function(profit){
+    socket.on('ETHUSDT-3m-profit-log', function(profit){
         $("#secondGross").html(profit.gross);
         $("#secondFees").html(profit.fees);
         $("#secondNet").html(profit.net);
 
     });
 
-    socket.on('ETHUSDT-1h', (data) => {
+    socket.on('ETHUSDT-3m', (data) => {
         //console.log(data)
         
         secondChart.set("data", [{
