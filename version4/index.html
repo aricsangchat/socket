@@ -28,8 +28,14 @@
               <div id="mainMACDChart" class="chart" ></div>
             </div>
             <div class="buttons">
-              <button class="btnStart"><span>start</span></button>
-              <button class="btnLaunch"><span>launch</span></button>
+              <button id="btn-backtest" class="btnStart"><span>Start Backtest</span></button>
+              <span class="custom-dropdown big">
+                <select>    
+                    <option>BTCUSDT</option>
+                    <option>ETHUSDT</option>  
+                    <option>ADAUSDT</option>
+                </select>
+            </span>
             </div>
           </div>
           
@@ -58,7 +64,7 @@
           
       <!-- </div>
     </div> -->
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
     <script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.stock.min.js"></script>
     <script src="/clientMain.js"></script>

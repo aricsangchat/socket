@@ -25,17 +25,12 @@ let engage = false;
 
 // ## BOT COMMANDS AND MESSAGE LOG
 
-io.on('botLog', function(msg){
-    console.log(msg)
-    if (msg === 'start') {
-        engage = true;
-    }
-});
+
 // setTimeout(() => {
 //     engage = true;
 // }, 60000);
 
-function Bot(symbol, tf) {
+function Bot(symbol, tf, socket) {
 
     const pair = symbol;
     const timeframe = tf;
@@ -371,7 +366,7 @@ function Bot(symbol, tf) {
 
         console.log('Engage: ', engage, 'Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
 
-        io.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
+        socket.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
 
     }
 
@@ -394,7 +389,7 @@ function Bot(symbol, tf) {
 
         console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
 
-        io.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
+        socket.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
 
     }
 
@@ -467,11 +462,10 @@ function Bot(symbol, tf) {
         const stream = require("fs").createReadStream("historicalData/ETHUSDT-1m-2021-10--2021-01.csv")
         const reader = require("readline").createInterface({ input: stream })
         let arr = []
-        let histData = []
         await reader.on("line", (row) => { arr.push(row.split(",")) })
 
         await reader.on("close", () => {
-            console.log()
+            console.log(arr)
             for (const key in arr) {
                 if (key < arr.length && key > 200000) {
                     data.time.push(_.toNumber(arr[key][0]));
@@ -489,7 +483,7 @@ function Bot(symbol, tf) {
             calcMACDStrategy()
             //calcTrixStrategy()
             calcProfit()
-            io.emit(`${symbol}-${tf}`, data);
+            socket.emit(`${symbol}-${tf}`, data);
             // tf === '1h' ? calcTrixStrategy() : calcTrixStrategy()
             // tf === '1h' ? calcProfit() : calcProfit()
             
@@ -513,7 +507,7 @@ function Bot(symbol, tf) {
                 calcProfit()
                 // tf === '1h' ? calcTrixStrategy() : calcTrixStrategy()
                 // tf === '1h' ? calcProfit() : calcProfit()
-                io.emit(`${symbol}-${tf}`, data);
+                socket.emit(`${symbol}-${tf}`, data);
             } else {
                 data.time.pop()
                 data.open.pop()
@@ -529,7 +523,7 @@ function Bot(symbol, tf) {
                 data.volume.push({ x: _.toNumber(timeStamp), y: _.toNumber(tick.volume) });
                 calcProfit()
                 // tf === '1h' ? calcProfit() : calcProfit()
-                io.emit(`${symbol}-${tf}`, data);
+                socket.emit(`${symbol}-${tf}`, data);
             }
 
             if (tick.hasOwnProperty('isFinal') === false) {
@@ -546,7 +540,7 @@ function Bot(symbol, tf) {
             let tick = binance.last(chart);
             
             if (hasCachedDataExecuted === false) {
-                mapHistoricalData()
+                
                 //mapCachedData(chart)
                 hasCachedDataExecuted = true;
             }
@@ -568,7 +562,7 @@ function Bot(symbol, tf) {
                 data.streamBid.push({ x: Date.now(), y: _.toNumber(res.bestBid) })
                 data.streamAsk.push({ x: Date.now(), y: _.toNumber(res.bestAsk) })
             }
-            //io.emit('STREAM', data);
+            //socket.emit('STREAM', data);
             //console.log(data.stream[0])
         } ); 
     }
@@ -582,6 +576,9 @@ function Bot(symbol, tf) {
         },
         data: () => {
             return data;
+        },
+        startBacktest: () => {
+            mapHistoricalData()
         }
     }
 }
@@ -593,7 +590,12 @@ app.get('/', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-    //io.emit('CHART_DATA', globalData);
+    socket.on('botCommand', (cmd) => {
+        console.log('cmd')
+        if (cmd === 'START_BACKTEST') {
+            Bot('ETHUSDT', '1m', socket).startBacktest()
+        }
+    });
 });
 
 http.listen(port, function () {
