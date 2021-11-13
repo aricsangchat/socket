@@ -12,7 +12,7 @@ if (port === 3000) {
 const Binance = require('node-binance-api');
 const TRIX = require('technicalindicators').TRIX;
 const MACD = require('technicalindicators').MACD;
-const { toNumber } = require('lodash');
+const EMA = require('technicalindicators').EMA;
 
 const binance = new Binance().options({
     APIKEY: process.env.bkey ? process.env.bkey : config.BINANCE_APIKEY,
@@ -20,15 +20,6 @@ const binance = new Binance().options({
     test: true,
     reconnect: true
 });
-
-let engage = false;
-
-// ## BOT COMMANDS AND MESSAGE LOG
-
-
-// setTimeout(() => {
-//     engage = true;
-// }, 60000);
 
 function Bot(symbol, tf, socket) {
 
@@ -38,51 +29,51 @@ function Bot(symbol, tf, socket) {
     let isFinal = false;
     let skipFirstTick = false;
 
-    let data = {
-        open: [],
-        high: [],
-        low: [],
-        close: [],
-        volume: [],
-        time: [],
-        sma: [],
-        mfi: [],
-        fi: [],
-        rsi: [],
-        secondRSI: [],
-        vwap: [],
-        vwapCrossOver: [],
-        long: [],
-        short: [],
-        positiveCashFlow: [],
-        negativeCashFlow: [],
-        obv: [],
-        kst: [],
-        kstSignal: [],
-        kstCrossOver: [],
-        adx: [],
-        rsiCrossOver: [],
-        liveOpenLongs: [],
-        liveOpenShorts: [],
-        kstGap: [],
-        kstUpDown: [],
-        kstSignalUpDown: [],
-        currentPosition: [],
-        trix: [],
-        trixUpDown: [],
-        doji: [],
-        bullish: [],
-        trixGap: [],
-        trixGapUpDown: [],
-        trixGapEntryExit: [],
-        oneHourLong: [],
-        oneHourShort: [],
-        oneHourCurrent: [],
-        streamBid: [],
-        streamAsk: [],
-        macdSignal: [],
-        macd: []
-    }
+    // let data = {
+    //     open: [],
+    //     high: [],
+    //     low: [],
+    //     close: [],
+    //     volume: [],
+    //     time: [],
+    //     sma: [],
+    //     mfi: [],
+    //     fi: [],
+    //     rsi: [],
+    //     secondRSI: [],
+    //     vwap: [],
+    //     vwapCrossOver: [],
+    //     long: [],
+    //     short: [],
+    //     positiveCashFlow: [],
+    //     negativeCashFlow: [],
+    //     obv: [],
+    //     kst: [],
+    //     kstSignal: [],
+    //     kstCrossOver: [],
+    //     adx: [],
+    //     rsiCrossOver: [],
+    //     liveOpenLongs: [],
+    //     liveOpenShorts: [],
+    //     kstGap: [],
+    //     kstUpDown: [],
+    //     kstSignalUpDown: [],
+    //     currentPosition: [],
+    //     trix: [],
+    //     trixUpDown: [],
+    //     doji: [],
+    //     bullish: [],
+    //     trixGap: [],
+    //     trixGapUpDown: [],
+    //     trixGapEntryExit: [],
+    //     oneHourLong: [],
+    //     oneHourShort: [],
+    //     oneHourCurrent: [],
+    //     streamBid: [],
+    //     streamAsk: [],
+    //     macdSignal: [],
+    //     macd: []
+    // }
 
     // ## HELPER FUNCTIONS
 
@@ -99,9 +90,11 @@ function Bot(symbol, tf, socket) {
 
     // ## INDICATORS
 
-    const calcMACD = () => {
+    const calcMACD = (data) => {
         let values = [];
         data.macd = [];
+        data.macdSignal = [];
+
         for (let index = 0; index < data.close.length; index++) {
             values.push(data.close[index].y)
 
@@ -124,7 +117,25 @@ function Bot(symbol, tf, socket) {
         }
     }
 
-    const calcTRIX = () => {
+    const calcEMA = (data, period) => {
+        let closeData = [];
+        data.ema[period.toString()] = [];
+
+        for (let index = 0; index < data.close.length; index++) {
+            closeData.push(data.close[index].y)
+        }
+        
+        let output = EMA.calculate({period : period, values : closeData})
+        //console.log(output.length, closeData.length)
+        offsetPeriod(closeData.length - output.length - 1, output)
+        //console.log(output.length, closeData.length)
+
+        for (let index = 0; index < data.time.length; index++) {
+            data.ema[period.toString()].push({ x: data.time[index], y: output[index] })
+        }
+    }
+
+    const calcTRIX = (data) => {
         let values = [];
         data.trix = [];
         data.trixUpDown = [];
@@ -159,10 +170,11 @@ function Bot(symbol, tf, socket) {
         offsetPeriod(52, data.trixUpDown)
     }
 
-    const calcTrixGap = () => {
+    const calcTrixGap = (data) => {
         let values = []
         let upDownValues = []
         data.trixGapUpDown = []
+        data.trixGap = []
 
         for (let index = 0; index < data.trix.length; index++) {
             if (data.trix[index].y !== 0 && data.trix[index - 1].y !== 0) {
@@ -226,48 +238,86 @@ function Bot(symbol, tf, socket) {
 
     // ## STRATEGIES
 
-    const calcMACDStrategy = () => {
+    const calcMACDStrategy = (data) => {
         data.long = [];
         data.short = []
         data.currentPosition = [];
+        data.ema = {};
 
-        for (let index = 0; index < data.time.length; index++) {
-            if (data.macd[index].y > data.macdSignal[index].y && data.macd[index].y < -15) {
-                
-                if (data.currentPosition.length === 0) {
-                    data.long.push(data.close[index])
-                    data.currentPosition.push({ position: 'long', details: data.close[index] })
-                } else {
-                    if (data.currentPosition[data.currentPosition.length - 1].position === "short") {
-                        data.long.push(data.close[index])
-                        data.currentPosition.push({ position: 'long', details: data.close[index] })
-                    }
+        // Create Indicator
+        calcMACD(data)
+        calcEMA(data, 21)
+        calcEMA(data, 200)
+        //console.log(data.ema['21'])
+
+        const handleUpDownTrendSetting = (index) => {
+            if (data.ema['21'][index].y > data.ema['200'][index].y) {
+                // up trend
+                return {
+                    long: -10,
+                    sell: 10
+                }
+            } else {
+                // down trend 
+                return {
+                    long: -50,
+                    sell: 0
                 }
             }
+        }
+
+        
+
+        for (let index = 0; index < data.time.length; index++) {
+            //if (data.ema['21'][index].y > data.ema['200'][index].y) {
+                if (data.macd[index].y > data.macdSignal[index].y && data.macd[index].y < handleUpDownTrendSetting(index).long) {
+                
+                    if (data.currentPosition.length === 0) {
+                        data.long.push(data.close[index])
+                        data.currentPosition.push({ position: 'long', details: data.close[index] })
+                    } else {
+                        if (data.currentPosition[data.currentPosition.length - 1].position === "short") {
+                            data.long.push(data.close[index])
+                            data.currentPosition.push({ position: 'long', details: data.close[index] })
+                        }
+                    }
+                }
+            //}
+            
                 
             if (data.currentPosition.length > 0) {
                 if (data.currentPosition[data.currentPosition.length - 1].position === "long") {
                     //let stopLoss = handleStopLoss(data.close[index].y, data.long[data.long.length - 1], data.time[index]);
 
                     //if (!stopLoss) {
-                        if (data.macd[index].y < data.macdSignal[index].y && data.macd[index].y > 10) {
+                        if (data.macd[index].y < data.macdSignal[index].y && data.macd[index].y > handleUpDownTrendSetting(index).sell) {
                             //console.log(new Date(masterDataObject.time[index]), masterDataObject.close[index])
                             data.short.push(data.close[index])
                             data.currentPosition.push({ position: 'short', details: data.close[index] })
 
-                        }
+                        } 
+                        // else if (data.ema['21'][index - 1].y > data.ema['200'][index - 1].y && data.ema['21'][index].y < data.ema['200'][index].y) {
+                        //     data.short.push(data.close[index])
+                        //     data.currentPosition.push({ position: 'short', details: data.close[index] })
+                        // }
                     //}
 
-                }
+                } 
             }
             
         }        
     }
 
-    const calcTrixStrategy = () => {
+    const calcTrixStrategy = (data) => {
         data.long = [];
         data.short = []
         data.currentPosition = [];
+        data.ema = {};
+
+        calcTRIX(data)
+        calcTrixGap(data)
+        calcEMA(data, 21)
+        calcEMA(data, 200)
 
         for (let index = 0; index < data.time.length; index++) {
             if (data.trixUpDown[index] !== 0 && data.trixUpDown[index - 1] !== 0) {
@@ -305,27 +355,37 @@ function Bot(symbol, tf, socket) {
 
     // ## PROFIT CALCULATIONS
 
-    const calcProfit = () => {
+    const calcProfit = (data) => {
         let longSum = 0;
         let shortSum = 0;
+        let initialInvestment = 500;
+
         for (let index = 0; index < data.long.length; index++) {
-            longSum = data.long[index].y + longSum
+            console.log((data.long[index].y * (initialInvestment/data.long[index].y)) - (data.short[index].y * (initialInvestment/data.long[index].y)), initialInvestment/data.long[index].y)
+
+            initialInvestment = ((data.short[index].y * (initialInvestment/data.long[index].y)) - (data.long[index].y * (initialInvestment/data.long[index].y))) + initialInvestment;
+            longSum = (data.long[index].y * (initialInvestment/data.long[index].y)) + longSum
         }
         for (let index = 0; index < data.short.length; index++) {
-            shortSum = data.short[index].y + shortSum
+            shortSum = (data.short[index].y * (initialInvestment/data.short[index].y)) + shortSum
         }
 
-        console.log(longSum, shortSum)
+        console.log('Total Buy:', longSum, "Total Sell:", shortSum, 'Total Capitol:', initialInvestment)
 
         let gross = shortSum - longSum;
         let totalTradeAmount = shortSum + longSum;
         let fees = totalTradeAmount * 0.00075;
         let net = gross - fees;
+        let percent = longSum
 
         console.log('Gross: ', parseFloat(gross.toFixed(2)), 'Fees: ', parseFloat(fees.toFixed(2)), 'Net: ', parseFloat(net.toFixed(2)))
 
         socket.emit(`${symbol}-${tf}-profit-log`, { gross: parseFloat(gross.toFixed(2)), fees: parseFloat(fees.toFixed(2)), net: parseFloat(net.toFixed(2)) });
 
+    }
+
+    const calcCompoundProfit = (data) => {
+        
     }
 
     const calcOneHourProfit = () => {
@@ -415,7 +475,16 @@ function Bot(symbol, tf, socket) {
         // tf === '1h' ? calcProfit() : calcProfit()
     }
 
-    const mapHistoricalData = async () => {
+    const mapHistoricalData = async (strategy) => {
+
+        let historicalData = {
+            time: [],
+            open: [],
+            high: [],
+            low: [],
+            close: [],
+            volume: []
+        };
 
         const stream = require("fs").createReadStream("historicalData/ETHUSDT-1m-2021-10--2021-01.csv")
         const reader = require("readline").createInterface({ input: stream })
@@ -423,27 +492,27 @@ function Bot(symbol, tf, socket) {
         await reader.on("line", (row) => { arr.push(row.split(",")) })
 
         await reader.on("close", () => {
-            console.log(arr)
             for (const key in arr) {
-                if (key < arr.length && key > 200000) {
-                    data.time.push(_.toNumber(arr[key][0]));
-                    data.open.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][1]) });
-                    data.high.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][2]) });
-                    data.low.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][3]) });
-                    data.close.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][4]) });
-                    data.volume.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][5]) });
+                if (key < arr.length && key > 300000) {
+                    historicalData.time.push(_.toNumber(arr[key][0]));
+                    historicalData.open.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][1]) });
+                    historicalData.high.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][2]) });
+                    historicalData.low.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][3]) });
+                    historicalData.close.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][4]) });
+                    historicalData.volume.push({ x: _.toNumber(arr[key][0]), y: _.toNumber(arr[key][5]) });
                 }
                 
             }
-            calcTRIX()
-            calcMACD()
-            calcTrixGap()
-            calcMACDStrategy()
-            //calcTrixStrategy()
-            calcProfit()
-            socket.emit(`${symbol}-${tf}`, data);
-            // tf === '1h' ? calcTrixStrategy() : calcTrixStrategy()
-            // tf === '1h' ? calcProfit() : calcProfit()
+
+            if (strategy == 'macd') {
+                calcMACDStrategy(historicalData)
+                calcProfit(historicalData)
+            } else if (strategy == 'trix') {
+                calcTrixStrategy(historicalData)
+                calcProfit(historicalData)
+            }
+            
+            socket.emit(`${symbol}-${tf}`, historicalData);
             
         });
     }
@@ -535,8 +604,8 @@ function Bot(symbol, tf, socket) {
         data: () => {
             return data;
         },
-        startBacktest: () => {
-            mapHistoricalData()
+        startBacktest: (strategy) => {
+            mapHistoricalData(strategy)
         }
     }
 }
@@ -549,9 +618,9 @@ app.get('/', function (req, res) {
 
 io.on('connection', function (socket) {
     socket.on('botCommand', (cmd) => {
-        console.log('cmd')
+        console.log(cmd)
         if (cmd === 'START_BACKTEST') {
-            Bot('ETHUSDT', '1m', socket).startBacktest()
+            Bot('ETHUSDT', '1m', socket).startBacktest('macd')
         }
     });
 });

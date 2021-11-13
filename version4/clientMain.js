@@ -27,7 +27,11 @@ CanvasJS.addColorSet("seaShades",
     "#4E4F50",
     "#4E4F50",
     "#E2DED0",
-    "#647C90",
+    //"#647C90",
+    "#FD49A0",
+    "#A16AE8",
+    "#B4FEE7",
+    "#603F8B",
 ]
 );
 
@@ -202,8 +206,25 @@ $(function () {
 
     });
 
+    function renderEMA(data) {
+        for (const key in data.ema) {
+            console.log(`${key}: ${data.ema[key]}`);
+            mainChart.addTo("data", {
+                type: "line",
+                lineThickness: 1,
+                xValueType: "dateTime",
+                xValueFormatString: "MMM-DD hh:mm",
+                showInLegend: true,
+                name: key,
+                axisYType: "primary",
+                yValueFormatString: "",
+                dataPoints: data.ema[key]
+            })
+        }
+    }
+
     socket.on('ETHUSDT-1m', (data) => {
-        //console.log(data)
+        console.log(data)
         
         mainChart.set("data", [{
             type: "line",
@@ -242,6 +263,7 @@ $(function () {
             xValueFormatString: "",
             dataPoints: data.short
         }])
+        renderEMA(data)
         mainChart.render()
 
         // trixChart.set("data", [{
@@ -265,7 +287,7 @@ $(function () {
         //     xValueType: "dateTime",
         //     dataPoints: data.trixGap
         // }])
-        // trixChart.render()
+        //trixChart.render()
 
         macdChart.set("data", [{
             type: "line",

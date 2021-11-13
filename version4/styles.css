@@ -113,7 +113,7 @@ header {
     position: absolute;
     width: 0;
     height: 2px;
-    background-color: #ace7ef;
+    background-color: #009688;
     transition: all 0.4s ease;
     left: 0;
     top: 0;
@@ -123,7 +123,7 @@ header {
     position: absolute;
     width: 0;
     height: 2px;
-    background-color: #ace7ef;
+    background-color: #009688;
     transition: all 0.4s 0.2s ease;
     right: 0;
     bottom: 0;
@@ -143,7 +143,7 @@ header {
     position: absolute;
     width: 2px;
     height: 0;
-    background-color: #ace7ef;
+    background-color: #009688;
     transition: all 0.4s 0.3s ease;
     left: 0;
     top: 0;
@@ -153,13 +153,13 @@ header {
     position: absolute;
     width: 2px;
     height: 0;
-    background-color: #ace7ef;
+    background-color: #009688;
     transition: all 0.4s 0.4s ease;
     right: 0;
     bottom: 0;
 }
 .buttons button:hover {
-    color: #ace7ef;
+    color: #009688;
     letter-spacing: 2px;
 }
 .buttons button:hover:before, .buttons button:hover:after {
@@ -193,7 +193,7 @@ header {
   }
   
   .custom-dropdown select {
-    background-color: #1abc9c;
+    background-color: #009688;
     color: #fff;
     font-size: inherit;
     padding: .5em;
